@@ -57,6 +57,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
   
+  // Handle start next mini lesson request
+  if (request.action === 'startNextMiniLesson') {
+    // Forward to popup if open, or store for when popup opens
+    chrome.runtime.sendMessage({
+      action: 'startNextMiniLesson',
+      mainLessonTitle: request.mainLessonTitle,
+      currentMiniLessonIndex: request.currentMiniLessonIndex
+    }).catch(() => {
+      // Popup might not be open, store the request
+      chrome.storage.local.set({ 
+        pendingNextLesson: {
+          mainLessonTitle: request.mainLessonTitle,
+          currentMiniLessonIndex: request.currentMiniLessonIndex
+        }
+      });
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+  
   // Handle START_SESSION
   if (request.type === 'START_SESSION') {
     sessionState.isRecording = true;

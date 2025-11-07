@@ -1116,3 +1116,60 @@ async function startGame(gameTitle) {
     hideLoading();
   }
 }
+
+// Listen for messages to start next mini lesson
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'startNextMiniLesson') {
+    const { mainLessonTitle, currentMiniLessonIndex } = request;
+    
+    // Get mini lessons for this main lesson
+    const miniLessons = miniLessonsData[mainLessonTitle] || [];
+    const nextIndex = currentMiniLessonIndex + 1;
+    
+    if (nextIndex < miniLessons.length) {
+      const nextMiniLesson = miniLessons[nextIndex];
+      const completionKey = `completion_${mainLessonTitle.replace(/\s+/g, '_')}`;
+      const miniLessonKey = `${completionKey}_${nextIndex}`;
+      
+      // Determine lesson number (for Tutorial Lesson 1 or 2)
+      let lessonNumber = null;
+      if (mainLessonTitle === "Tutorial Lesson 1") {
+        lessonNumber = 1;
+      } else if (mainLessonTitle === "Tutorial Lesson 2") {
+        lessonNumber = 2;
+      }
+      
+      // Start the next mini lesson with splash screen skipped
+      startMiniLesson(mainLessonTitle, lessonNumber, nextIndex, nextMiniLesson, miniLessonKey, true);
+      sendResponse({ success: true });
+    } else {
+      // No more mini lessons, just reopen popup
+      sendResponse({ success: false, reason: 'no_more_lessons' });
+    }
+    return true;
+  }
+  
+  // Check for pending next lesson on popup load
+  if (request.action === 'checkPendingNextLesson') {
+    chrome.storage.local.get(['pendingNextLesson'], (result) => {
+      if (result.pendingNextLesson) {
+        const { mainLessonTitle, currentMiniLessonIndex } = result.pendingNextLesson;
+        chrome.storage.local.remove(['pendingNextLesson']);
+        
+        // Trigger next lesson start
+        chrome.runtime.sendMessage({
+          action: 'startNextMiniLesson',
+          mainLessonTitle,
+          currentMiniLessonIndex
+        });
+      }
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+});
+
+// Check for pending next lesson when popup loads
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  chrome.runtime.sendMessage({ action: 'checkPendingNextLesson' });
+}
