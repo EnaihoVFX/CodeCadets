@@ -702,6 +702,401 @@ body {
   margin: 10px 0;
   line-height: 1.8;
 }
+
+/* Mini Lessons View */
+.mini-lessons-view {
+  position: relative;
+  z-index: 1;
+}
+
+.mini-lessons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 4px solid #10B981;
+}
+
+.mini-lessons-header h2 {
+  font-size: 18px;
+  color: #10B981;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  flex: 1;
+  text-align: center;
+}
+
+.progress-section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background: #000;
+  border: 3px solid #7C3AED;
+  position: relative;
+}
+
+.progress-section::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: -3px;
+  bottom: -3px;
+  border: 3px solid #10B981;
+  z-index: -1;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  font-size: 10px;
+  color: #7C3AED;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.progress-percentage {
+  font-size: 16px;
+  color: #10B981;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 12px;
+  background: #1a1a1a;
+  border: 2px solid #7C3AED;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+  width: 0%;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.mini-lessons-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+  padding: 20px 0;
+  align-items: center;
+}
+
+/* Duolingo-style path container */
+.lesson-path {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  min-height: 100%;
+}
+
+/* Curved path line connecting lessons using SVG - REMOVED */
+.lesson-path::before {
+  display: none; /* Hide the connecting line */
+}
+
+/* SVG path for curved connections - REMOVED */
+.lesson-path-svg {
+  display: none; /* Hide SVG path */
+}
+
+.lesson-path-line {
+  stroke: #10B981;
+  stroke-width: 6;
+  fill: none;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5));
+  transition: stroke 0.3s ease;
+}
+
+.lesson-path.completed-segment .lesson-path-line {
+  stroke: #10B981;
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
+}
+
+.mini-lesson-box {
+  position: relative;
+  z-index: 2;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #000;
+  border: 5px solid #7C3AED;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 15px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 20px rgba(124, 58, 237, 0.3);
+  /* Alternate left/right positioning for curved path */
+  align-self: center;
+}
+
+/* Progress ring SVG */
+.progress-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.progress-ring-circle-bg {
+  opacity: 0.6;
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+/* Alternate positions for curved path effect */
+.mini-lesson-box:nth-child(odd) {
+  margin-left: 0;
+}
+
+.mini-lesson-box:nth-child(even) {
+  margin-right: 0;
+}
+
+/* Completed lesson styling */
+.mini-lesson-box.completed {
+  border-color: #10B981;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5), 0 0 30px rgba(16, 185, 129, 0.4);
+  transform: scale(1.05);
+}
+
+.mini-lesson-box.completed::after {
+  content: '✓';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  background: #10B981;
+  border: 3px solid #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Current/active lesson */
+.mini-lesson-box.current {
+  border-color: #FBBF24;
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+  box-shadow: 0 4px 25px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.4);
+  animation: pulseGlow 2s ease-in-out infinite;
+  transform: scale(1.1);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 4px 25px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 35px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.6);
+  }
+}
+
+/* Locked lesson */
+.mini-lesson-box.locked {
+  border-color: #6B7280;
+  background: #1a1a1a;
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+
+.mini-lesson-box.locked::before {
+  content: '🔒';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  z-index: 3;
+  filter: grayscale(1);
+}
+
+.mini-lesson-box.locked .mini-lesson-icon,
+.mini-lesson-box.locked .mini-lesson-number,
+.mini-lesson-box.locked .mini-lesson-title {
+  opacity: 0.4;
+}
+
+.mini-lesson-box:hover:not(.locked) {
+  transform: scale(1.15) translateY(-5px);
+  box-shadow: 0 6px 30px rgba(124, 58, 237, 0.5), 0 0 50px rgba(124, 58, 237, 0.4);
+}
+
+.mini-lesson-box.completed:hover:not(.locked) {
+  transform: scale(1.15) translateY(-5px);
+  box-shadow: 0 6px 35px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.5);
+}
+
+.mini-lesson-box.current:hover:not(.locked) {
+  transform: scale(1.2) translateY(-5px);
+  box-shadow: 0 6px 40px rgba(251, 191, 36, 0.7), 0 0 70px rgba(251, 191, 36, 0.6);
+}
+
+.mini-lesson-box:active:not(.locked) {
+  transform: scale(1.05) translateY(-2px);
+}
+
+.mini-lesson-icon {
+  font-size: 36px;
+  line-height: 1;
+  margin-bottom: 4px;
+  display: block;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+  transition: transform 0.3s;
+  position: relative;
+  z-index: 2;
+}
+
+.mini-lesson-box:hover:not(.locked) .mini-lesson-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.mini-lesson-box.completed .mini-lesson-icon {
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5)) brightness(1.1);
+}
+
+.mini-lesson-number {
+  font-size: 8px;
+  color: #7C3AED;
+  font-weight: bold;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 2;
+}
+
+.mini-lesson-box.completed .mini-lesson-number {
+  color: #000;
+  font-weight: bold;
+}
+
+.mini-lesson-box.current .mini-lesson-number {
+  color: #000;
+  font-weight: bold;
+}
+
+.mini-lesson-title {
+  font-size: 7px;
+  color: #10B981;
+  font-weight: bold;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 4px;
+  margin-bottom: 2px;
+  position: relative;
+  z-index: 2;
+}
+
+.mini-lesson-box.completed .mini-lesson-title {
+  color: #000;
+  font-weight: bold;
+}
+
+.mini-lesson-box.current .mini-lesson-title {
+  color: #000;
+  font-weight: bold;
+}
+
+.mini-lesson-box.locked .mini-lesson-title {
+  color: #6B7280;
+}
+
+.mini-lesson-description {
+  font-size: 5px;
+  color: #7C3AED;
+  line-height: 1.1;
+  text-align: center;
+  padding: 0 2px;
+  margin-top: 2px;
+  opacity: 0.8;
+  display: none; /* Hide on small circles, show on hover */
+}
+
+.mini-lesson-box:hover .mini-lesson-description {
+  display: block;
+}
+
+.mini-lesson-project-part {
+  font-size: 5px;
+  color: #10B981;
+  line-height: 1.1;
+  text-align: center;
+  padding: 0 2px;
+  margin-top: 2px;
+  font-weight: bold;
+  opacity: 0.9;
+  display: none;
+}
+
+.mini-lesson-box:hover .mini-lesson-project-part {
+  display: none; /* Removed hover descriptions */
+}
+
+.mini-lesson-categories {
+  font-size: 4px;
+  color: #FBBF24;
+  text-align: center;
+  padding: 0 2px;
+  margin-top: 1px;
+  opacity: 0.7;
+  display: none; /* Hide on small circles */
+}
+
+.mini-lesson-box:hover .mini-lesson-categories {
+  display: none; /* Removed hover descriptions */
+}
+
+.mini-lesson-builds-on {
+  font-size: 4px;
+  color: #7C3AED;
+  text-align: center;
+  padding: 0 2px;
+  margin-top: 1px;
+  opacity: 0.6;
+  font-style: italic;
+  display: none;
+}
+
+.mini-lesson-box:hover .mini-lesson-builds-on {
+  display: none; /* Removed hover descriptions */
+}
   </style>
 </head>
 <body>
@@ -730,6 +1125,29 @@ body {
           <!-- Achievements will be loaded here -->
         </div>
       </div>
+      
+      <!-- Mini Lessons View (hidden by default) -->
+      <div class="mini-lessons-view" id="mini-lessons-view" style="display: none;">
+        <div class="mini-lessons-header">
+          <button class="back-btn" id="mini-lessons-back-btn">← Back</button>
+          <h2 id="mini-lessons-title">Mini Lessons</h2>
+        </div>
+        <div class="progress-section">
+          <div class="progress-info">
+            <span class="progress-label">Progress</span>
+            <span class="progress-percentage" id="progress-percentage">0%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+        </div>
+        <div class="lesson-path" id="lesson-path">
+          <!-- SVG path will be generated here -->
+          <div class="mini-lessons-grid" id="mini-lessons-grid">
+            <!-- Mini lessons will be generated here -->
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Loading Indicator -->
@@ -740,6 +1158,7 @@ body {
   </div>
 
   <script src="tutorial-data.js"></script>
+  <script src="comprehensive-tutorial-data.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

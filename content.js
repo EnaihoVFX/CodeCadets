@@ -9,6 +9,10 @@ let tutorialData = [];
 let activeWatchers = [];
 let ghostBlockEl = null;
 let ghostBlockAnim = null;
+let hintsUsed = {}; // Track hints used per step: { stepIndex: true/false }
+let currentStepHintShown = false; // Track if hint is currently shown for this step
+let currentStepData = null; // Store current step data for hint functionality
+let tutorialMetadata = { mainLessonTitle: null, miniLessonIndex: null }; // Track tutorial metadata for progress
 
 // Interactive selector test state
 let selectorTestOverlay = null;
@@ -125,59 +129,45 @@ function createTutorialOverlay() {
     tutorialOverlay.remove();
   }
 
-  // Get mascot URL
-  const mascotUrl = chrome.runtime.getURL('mascot.png');
-
-  // Create overlay container
+  // Create overlay container - simplified retro design
   tutorialOverlay = document.createElement('div');
   tutorialOverlay.id = 'scratch-tutorial-overlay';
   tutorialOverlay.innerHTML = `
     <div class="tutorial-overlay-backdrop"></div>
     <div class="tutorial-overlay-content" id="tutorial-card">
       <div class="tutorial-header" id="tutorial-drag-handle">
-        <div class="tutorial-mascot-container">
-          <div class="mascot-speech-bubble">
-            <span class="speech-text">Let's Learn Scratch!</span>
-          </div>
-          <img src="${mascotUrl}" alt="Tutorial Helper" class="tutorial-mascot" />
-          <div class="mascot-shadow"></div>
-        </div>
-        <div class="tutorial-header-info">
-          <div class="tutorial-counter">Step <span id="step-num">1</span> of <span id="total-steps">?</span></div>
+        <div class="tutorial-counter">STEP <span id="step-num">1</span>/<span id="total-steps">?</span></div>
           <div class="tutorial-progress-bar">
             <div class="tutorial-progress-fill" id="progress-fill"></div>
-          </div>
         </div>
       </div>
       <div class="tutorial-body">
-        <div class="tutorial-content-wrapper">
-        <h3 id="step-title">Loading...</h3>
+        <h3 id="step-title">LOADING...</h3>
         <p id="step-description"></p>
           <div id="step-info-box" class="info-box">
-            <div class="info-box-icon">💡</div>
             <div class="info-box-content"></div>
           </div>
         <div id="step-actions" class="step-actions"></div>
-        </div>
       </div>
       <div class="tutorial-footer">
+        <button id="tut-hint-btn" class="tut-btn tut-btn-hint">
+          <span class="btn-text">HINT</span>
+        </button>
         <button id="tut-prev-btn" class="tut-btn tut-btn-secondary">
-          <span class="btn-icon">←</span>
-          <span class="btn-text">Previous</span>
+          <span class="btn-text">← PREV</span>
         </button>
         <button id="tut-next-btn" class="tut-btn tut-btn-primary" disabled>
-          <span class="btn-text">Next</span>
-          <span class="btn-icon">→</span>
+          <span class="btn-text">NEXT →</span>
         </button>
         <button id="tut-skip-btn" class="tut-btn tut-btn-skip">
-          <span class="btn-text">Skip</span>
+          <span class="btn-text">SKIP</span>
         </button>
       </div>
     </div>
     <div class="tutorial-highlight" id="highlight-box"></div>
     <div class="tutorial-pointer" id="tutorial-pointer">
       <div class="pointer-dot"></div>
-      <div class="pointer-label" id="pointer-label">Click here</div>
+      <div class="pointer-label" id="pointer-label">CLICK HERE</div>
     </div>
   `;
   
@@ -228,6 +218,26 @@ function attachTutorialListeners() {
   document.getElementById('tut-prev-btn').addEventListener('click', () => previousStep());
   document.getElementById('tut-next-btn').addEventListener('click', () => nextStep());
   document.getElementById('tut-skip-btn').addEventListener('click', () => closeTutorial());
+  
+  // Hint button handler
+  const hintBtn = document.getElementById('tut-hint-btn');
+  if (hintBtn) {
+    hintBtn.addEventListener('click', async () => {
+      if (!currentStepHintShown && currentStepData && currentTutorialStep >= 0) {
+        // Mark hint as used
+        hintsUsed[currentTutorialStep] = true;
+        currentStepHintShown = true;
+        
+        // Show the hint
+        await showStepHint(currentStepData, currentTutorialStep);
+        
+        // Update button state
+        hintBtn.disabled = true;
+        hintBtn.classList.add('hint-used');
+        hintBtn.querySelector('.btn-text').textContent = 'Hint Used';
+      }
+    });
+  }
 
   // Drag support for the card
   const card = document.getElementById('tutorial-card');
@@ -292,19 +302,40 @@ function injectTutorialCSS() {
       position: fixed;
       right: 16px;
       bottom: 16px;
-      background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-      border-radius: 28px;
+      background: #000;
+      border: 6px solid #10B981;
       padding: 0;
-      width: 420px;
-      box-shadow: 0 12px 40px rgba(100, 116, 139, 0.25), 0 0 0 4px rgba(255, 193, 7, 0.35);
+      width: 380px;
+      box-shadow: 0 0 0 4px #7C3AED, 0 0 30px rgba(16, 185, 129, 0.5);
       pointer-events: all;
       z-index: 1000000;
-      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Press Start 2P', monospace;
       max-height: 75vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      animation: slideInRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: slideInRight 0.3s ease-out;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+    
+    .tutorial-overlay-content::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(16, 185, 129, 0.2);
+      animation: scanline 4s linear infinite;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    
+    @keyframes scanline {
+      0% { top: 0; }
+      100% { top: 100%; }
     }
     
     @keyframes slideInRight {
@@ -330,447 +361,239 @@ function injectTutorialCSS() {
     }
     
     .tutorial-header {
-      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 30%, #EC4899 100%);
-      padding: 100px 20px 20px 20px;
-      border-radius: 28px 28px 0 0;
+      background: #000;
+      padding: 12px 16px;
+      border-bottom: 4px solid #10B981;
       cursor: move;
       position: relative;
-      overflow: visible;
     }
     
-    .tutorial-header::before {
+    .tutorial-header::after {
       content: '';
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(255,255,255,0.15) 2px, transparent 2px);
-      background-size: 30px 30px;
-      animation: float 25s linear infinite;
-      opacity: 0.6;
-    }
-    
-    @keyframes float {
-      0% { transform: translate(0, 0) rotate(0deg); }
-      100% { transform: translate(30px, 30px) rotate(360deg); }
-    }
-    
-    .tutorial-mascot-container {
-      position: relative;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      margin-bottom: 16px;
-      padding-top: 20px;
-      z-index: 2;
-    }
-    
-    .tutorial-mascot {
-      width: 120px;
-      height: auto;
-      max-height: 140px;
-      object-fit: contain;
-      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
-      animation: mascotFloat 3s ease-in-out infinite, mascotWiggle 4s ease-in-out infinite;
-      transform-origin: center bottom;
-      z-index: 2;
-      position: relative;
-    }
-    
-    @keyframes mascotFloat {
-      0%, 100% { 
-        transform: translateY(0) scale(1);
-      }
-      50% { 
-        transform: translateY(-10px) scale(1.05);
-      }
-    }
-    
-    @keyframes mascotWiggle {
-      0%, 100% { 
-        transform: rotate(0deg);
-      }
-      25% { 
-        transform: rotate(-2deg);
-      }
-      75% { 
-        transform: rotate(2deg);
-      }
-    }
-    
-    .mascot-shadow {
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 12px;
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 50%;
-      filter: blur(8px);
-      animation: shadowPulse 3s ease-in-out infinite;
-    }
-    
-    @keyframes shadowPulse {
-      0%, 100% { 
-        width: 80px;
-        opacity: 0.2;
-      }
-      50% { 
-        width: 90px;
-        opacity: 0.3;
-      }
-    }
-    
-    .mascot-speech-bubble {
-      position: absolute;
-      top: -60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-      border: 3px solid #FBBF24;
-      border-radius: 20px;
-      padding: 12px 18px;
-      box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
-      z-index: 3;
-      animation: bubblePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), bubbleFloat 3s ease-in-out infinite;
-      white-space: nowrap;
-      max-width: 280px;
-    }
-    
-    .mascot-speech-bubble::before {
-      content: '';
-      position: absolute;
-      bottom: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 12px solid transparent;
-      border-right: 12px solid transparent;
-      border-top: 12px solid #FBBF24;
-    }
-    
-    .mascot-speech-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 10px solid #FDE68A;
-    }
-    
-    @keyframes bubblePop {
-      0% {
-        transform: translateX(-50%) scale(0);
-        opacity: 0;
-      }
-      50% {
-        transform: translateX(-50%) scale(1.1);
-      }
-      100% {
-        transform: translateX(-50%) scale(1);
-        opacity: 1;
-      }
-    }
-    
-    @keyframes bubbleFloat {
-      0%, 100% {
-        transform: translateX(-50%) translateY(0);
-      }
-      50% {
-        transform: translateX(-50%) translateY(-5px);
-      }
-    }
-    
-    .speech-text {
-      font-size: 16px;
-      font-weight: bold;
-      color: #78350F;
-      display: block;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
-    }
-    
-    .tutorial-header-info {
-      position: relative;
-      z-index: 2;
-      text-align: center;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #7C3AED;
     }
     
     .tutorial-counter {
-      font-size: 15px;
-      color: rgba(255, 255, 255, 0.95);
-      font-weight: bold;
-      background: rgba(255, 255, 255, 0.25);
-      padding: 8px 16px;
-      border-radius: 20px;
-      display: inline-block;
-      backdrop-filter: blur(10px);
-      margin-bottom: 12px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      font-size: 10px;
+      color: #10B981;
+      font-weight: normal;
+      text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      text-shadow: 2px 2px 0px #000, 4px 4px 0px rgba(16, 185, 129, 0.3);
     }
     
     .tutorial-body {
-      padding: 20px 24px;
+      padding: 16px;
       overflow-y: auto;
       flex: 1;
-      background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
-    }
-    
-    .tutorial-content-wrapper {
-      position: relative;
-      z-index: 1;
+      background: #000;
     }
     
     .tutorial-body h3 {
       margin: 0 0 12px 0;
-      font-size: 20px;
-      color: #1e293b;
-      font-weight: bold;
-      line-height: 1.3;
+      font-size: 11px;
+      color: #10B981;
+      font-weight: normal;
+      line-height: 1.6;
+      text-shadow: 2px 2px 0px #000;
     }
     
     .tutorial-body p {
-      margin: 0 0 16px 0;
-      font-size: 16px;
-      line-height: 1.6;
-      color: #475569;
+      margin: 0 0 12px 0;
+      font-size: 9px;
+      line-height: 1.8;
+      color: #7C3AED;
+      text-shadow: 1px 1px 0px #000;
     }
     
     .info-box {
-      margin: 20px 0;
-      padding: 18px;
-      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-      border: 3px solid #FBBF24;
-      border-radius: 16px;
-      font-size: 15px;
-      color: #78350F;
-      line-height: 1.7;
-      display: flex;
-      gap: 12px;
-      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .info-box::before {
-      content: '✨';
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      font-size: 60px;
-      opacity: 0.1;
-      animation: wiggle 3s ease-in-out infinite;
-    }
-    
-    .info-box-icon {
-      font-size: 28px;
-      flex-shrink: 0;
-      animation: bounce 2s ease-in-out infinite;
-    }
-    
-    .info-box-content {
-      flex: 1;
-    }
-    
-    #step-info-box {
-      display: none !important;
+      margin: 12px 0;
+      padding: 12px;
+      background: #0a0a0a;
+      border: 3px solid #7C3AED;
+      font-size: 8px;
+      color: #7C3AED;
+      line-height: 1.6;
+      display: none;
+      text-shadow: 1px 1px 0px #000;
     }
     
     #step-info-box.show-info {
-      display: flex !important;
+      display: block !important;
     }
     
-    #step-info-box .info-box-content {
-      padding: 0;
+    .info-box-content {
+      margin: 0;
     }
     
     .step-actions {
-      margin: 20px 0;
+      margin: 12px 0;
     }
     
     .step-actions button {
       display: block;
       width: 100%;
-      padding: 16px;
-      margin: 10px 0;
+      padding: 10px;
+      margin: 6px 0;
       border: 3px solid #10B981;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
-      color: #065F46;
-      font-size: 16px;
-      font-weight: bold;
+      background: #000;
+      color: #10B981;
+      font-size: 9px;
+      font-weight: normal;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      text-align: left;
-      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .step-actions button::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.5);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
+      transition: all 0.1s;
+      text-align: center;
+      font-family: 'Press Start 2P', monospace;
+      text-shadow: 2px 2px 0px #000;
+      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.3);
     }
     
     .step-actions button:hover {
-      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-      color: white;
-      transform: translateX(8px) scale(1.02);
-      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
-      border-color: #047857;
-    }
-    
-    .step-actions button:hover::before {
-      width: 300px;
-      height: 300px;
+      background: #10B981;
+      color: #000;
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.3);
     }
     
     .step-actions button:active {
-      transform: translateX(4px) scale(0.98);
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.3);
     }
     
     .tutorial-footer {
       display: flex;
-      gap: 12px;
+      gap: 6px;
       margin-top: 0;
-      padding: 20px;
-      background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
-      border-top: 3px solid #E2E8F0;
-      border-radius: 0 0 24px 24px;
+      padding: 12px;
+      background: #000;
+      border-top: 4px solid #10B981;
     }
     
     .tut-btn {
       flex: 1;
-      padding: 14px 18px;
-      border: none;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: bold;
+      padding: 10px 8px;
+      border: 3px solid #10B981;
+      background: #000;
+      color: #10B981;
+      font-size: 8px;
+      font-weight: normal;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: all 0.1s;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      position: relative;
-      overflow: hidden;
+      font-family: 'Press Start 2P', monospace;
+      text-shadow: 2px 2px 0px #000;
+      box-shadow: 3px 3px 0px rgba(16, 185, 129, 0.3);
+      letter-spacing: 0.5px;
     }
     
-    .tut-btn .btn-icon {
-      font-size: 18px;
-      font-weight: bold;
+    .tut-btn:hover:not(:disabled) {
+      background: #10B981;
+      color: #000;
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px rgba(16, 185, 129, 0.3);
+    }
+    
+    .tut-btn:active:not(:disabled) {
+      transform: translate(3px, 3px);
+      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.3);
     }
     
     .tut-btn-primary {
-      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-      color: white;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      border-color: #10B981;
+      color: #10B981;
     }
     
     .tut-btn-primary:hover:not(:disabled) {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
-    }
-    
-    .tut-btn-primary:active:not(:disabled) {
-      transform: translateY(-1px) scale(1.02);
+      background: #10B981;
+      color: #000;
     }
     
     .tut-btn-secondary {
-      background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
-      color: #475569;
-      border: 2px solid #CBD5E1;
+      border-color: #7C3AED;
+      color: #7C3AED;
     }
     
     .tut-btn-secondary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      background: #7C3AED;
+      color: #000;
     }
     
     .tut-btn-secondary:disabled {
-      opacity: 0.4;
+      opacity: 0.3;
       cursor: not-allowed;
       transform: none;
     }
     
     .tut-btn-skip {
-      background: transparent;
-      color: #94A3B8;
-      border: 2px solid #E2E8F0;
+      border-color: #6B7280;
+      color: #6B7280;
     }
     
     .tut-btn-skip:hover {
-      background: #F8FAFC;
-      color: #64748B;
-      border-color: #CBD5E1;
+      background: #6B7280;
+      color: #000;
+    }
+    
+    .tut-btn-hint {
+      border-color: #FBBF24;
+      color: #FBBF24;
+    }
+    
+    .tut-btn-hint:hover:not(:disabled) {
+      background: #FBBF24;
+      color: #000;
+    }
+    
+    .tut-btn-hint:disabled,
+    .tut-btn-hint.hint-used {
+      opacity: 0.3;
+      cursor: not-allowed;
+      border-color: #6B7280;
+      color: #6B7280;
+    }
+    
+    .tut-btn-hint:disabled:hover,
+    .tut-btn-hint.hint-used:hover {
+      transform: none;
+      background: #000;
+      color: #6B7280;
     }
     
     .tutorial-progress-bar {
-      height: 8px;
-      background: rgba(255, 255, 255, 0.3);
+      height: 6px;
+      background: #0a0a0a;
       margin: 0;
-      border-radius: 10px;
+      border: 2px solid #7C3AED;
       overflow: hidden;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .tutorial-progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 50%, #FBBF24 100%);
-      border-radius: 8px;
-      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 0 12px rgba(251, 191, 36, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.3);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .tutorial-progress-fill::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-      animation: progressShine 2s infinite;
-    }
-    
-    @keyframes progressShine {
-      0% { left: -100%; }
-      100% { left: 100%; }
+      background: #10B981;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
     }
     
     .tutorial-highlight {
       position: absolute;
-      border: 4px solid #FBBF24;
-      border-radius: 16px;
+      border: 4px solid #10B981;
       pointer-events: none;
       z-index: 999998;
-      box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), inset 0 0 20px rgba(251, 191, 36, 0.3);
-      transition: all 0.3s ease;
-      background: rgba(251, 191, 36, 0.1);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), inset 0 0 10px rgba(16, 185, 129, 0.2);
+      transition: all 0.2s ease;
+      background: rgba(16, 185, 129, 0.1);
     }
 
     .tutorial-highlight.dim-backdrop {
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3), 0 0 30px rgba(251, 191, 36, 0.8);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.8);
     }
     
     .highlight-pulse {
@@ -805,45 +628,46 @@ function injectTutorialCSS() {
       display: none;
     }
     .pointer-dot {
-      width: 20px;
-      height: 20px;
-      background: #F59E0B;
-      border-radius: 50%;
-      box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.6);
-      animation: pulse 1.5s infinite, bounce 1s ease-in-out infinite;
+      width: 16px;
+      height: 16px;
+      background: #10B981;
+      border: 3px solid #000;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5), 0 0 15px rgba(16, 185, 129, 0.8);
+      animation: pulse 1.5s infinite;
     }
     .pointer-label {
-      margin-top: 8px;
-      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-      color: white;
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: bold;
+      margin-top: 6px;
+      background: #000;
+      color: #10B981;
+      padding: 6px 10px;
+      border: 3px solid #10B981;
+      font-size: 8px;
+      font-weight: normal;
       white-space: nowrap;
       transform: translateX(-25%);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 3px 3px 0px rgba(16, 185, 129, 0.3);
+      font-family: 'Press Start 2P', monospace;
+      text-shadow: 1px 1px 0px #000;
+      letter-spacing: 0.5px;
     }
     
-    /* Scrollbar styling for kid-friendly look */
+    /* Scrollbar styling - retro */
     .tutorial-body::-webkit-scrollbar {
-      width: 12px;
+      width: 8px;
     }
     
     .tutorial-body::-webkit-scrollbar-track {
-      background: #F1F5F9;
-      border-radius: 10px;
+      background: #0a0a0a;
+      border: 2px solid #7C3AED;
     }
     
     .tutorial-body::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-      border-radius: 10px;
-      border: 2px solid #F1F5F9;
+      background: #10B981;
+      border: 1px solid #000;
     }
     
     .tutorial-body::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+      background: #7C3AED;
     }
     
     /* Congratulations Achievement Screen - Angry Birds Style */
@@ -1095,6 +919,8 @@ function injectTutorialCSS() {
 function startTutorial(tutorialSteps) {
   tutorialData = tutorialSteps;
   currentTutorialStep = 0;
+  hintsUsed = {}; // Reset hints tracking
+  currentStepHintShown = false;
   createTutorialOverlay();
   showStep(0);
 }
@@ -1107,22 +933,28 @@ async function showStep(stepIndex) {
   }
   
   currentTutorialStep = stepIndex;
+  
+  // Send progress update
+  if (tutorialMetadata.mainLessonTitle !== null && tutorialMetadata.miniLessonIndex !== null) {
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({
+        action: 'stepProgress',
+        mainLessonTitle: tutorialMetadata.mainLessonTitle,
+        miniLessonIndex: tutorialMetadata.miniLessonIndex,
+        stepIndex: stepIndex,
+        totalSteps: tutorialData.length
+      });
+    }
+  }
+  
   // Clear any previous completion watchers
   clearActiveWatchers();
   const step = tutorialData[stepIndex];
   
   document.getElementById('step-num').textContent = stepIndex + 1;
   document.getElementById('total-steps').textContent = tutorialData.length;
-  document.getElementById('step-title').textContent = step.title || `Step ${stepIndex + 1}`;
-  document.getElementById('step-description').textContent = step.description;
-  
-  // Update speech bubble with step title (make it dynamic)
-  const speechBubble = document.querySelector('.mascot-speech-bubble .speech-text');
-  if (speechBubble && step.title) {
-    // Extract emoji and first few words for a friendly message
-    const shortTitle = step.title.length > 25 ? step.title.substring(0, 22) + '...' : step.title;
-    speechBubble.textContent = shortTitle;
-  }
+  document.getElementById('step-title').textContent = (step.title || `STEP ${stepIndex + 1}`).toUpperCase();
+  document.getElementById('step-description').textContent = step.description || '';
   
   // Display info box
   const infoBox = document.getElementById('step-info-box');
@@ -1142,6 +974,10 @@ async function showStep(stepIndex) {
     progressFill.style.width = `${progress}%`;
   }
   
+  // Check if hint was already used for this step
+  const hintWasUsed = hintsUsed[stepIndex] || false;
+  currentStepHintShown = hintWasUsed;
+  
   // Pointer near highlight target
   const pointer = document.getElementById('tutorial-pointer');
   const pointerLabel = document.getElementById('pointer-label');
@@ -1149,6 +985,7 @@ async function showStep(stepIndex) {
 
   // Clear any ghost from previous step
   clearGhostBlock();
+  clearHighlight();
 
   // Handle actions
   const actionsDiv = document.getElementById('step-actions');
@@ -1174,8 +1011,70 @@ async function showStep(stepIndex) {
     });
   }
   
-  // Highlight element if specified
+  // Store step data for hint functionality
+  currentStepData = step;
   let highlightedEl = null;
+  
+  // Only show highlights/pointers if hint was already used for this step
+  if (hintWasUsed && step.highlightSelector) {
+    highlightedEl = await showStepHint(step, stepIndex);
+  }
+  
+  // Update hint button state
+  const hintBtn = document.getElementById('tut-hint-btn');
+  if (hintBtn) {
+    if (step.highlightSelector || step.pointerText || step.ghostBlock) {
+      hintBtn.style.display = 'flex';
+      hintBtn.disabled = hintWasUsed;
+      if (hintWasUsed) {
+        hintBtn.classList.add('hint-used');
+        hintBtn.querySelector('.btn-text').textContent = 'Hint Used';
+      } else {
+        hintBtn.classList.remove('hint-used');
+        hintBtn.querySelector('.btn-text').textContent = 'Hint';
+      }
+    } else {
+      hintBtn.style.display = 'none';
+    }
+  }
+  
+  // Enable/disable navigation buttons
+  const prevBtn = document.getElementById('tut-prev-btn');
+  const nextBtn = document.getElementById('tut-next-btn');
+  prevBtn.disabled = stepIndex === 0;
+  // Always enable Next button - users can proceed regardless of completion
+  nextBtn.disabled = false;
+
+  // Completion detection: still track completion for visual feedback, but don't block Next button
+  if (step.requireComplete === true) {
+    const completionSpec = step.completeWhen || buildCompletionSpec(step);
+    if (completionSpec) {
+      setupCompletionWatcher(completionSpec, () => {
+        pointer.style.display = 'none';
+        const titleEl = document.getElementById('step-title');
+        if (titleEl && !titleEl.textContent.includes('✓')) {
+          titleEl.textContent = `${step.title} ✓`;
+        }
+      });
+    }
+  }
+
+  // Backdrop/dimming only for first step
+  const highlightBox = document.getElementById('highlight-box');
+  if (stepIndex === 0) {
+    highlightBox.classList.add('dim-backdrop');
+  } else {
+    highlightBox.classList.remove('dim-backdrop');
+  }
+}
+
+// Show hint for a step (highlights, pointers, etc.)
+async function showStepHint(step, stepIndex) {
+  const pointer = document.getElementById('tutorial-pointer');
+  const pointerLabel = document.getElementById('pointer-label');
+  let highlightedEl = null;
+  
+  // Highlight element if specified
   if (step.highlightSelector) {
     // If highlighting a flyout block key, ensure its category is open first
     if (step.highlightSelector.startsWith('key:')) {
@@ -1217,34 +1116,7 @@ async function showStep(stepIndex) {
     showGhostBlock(step.ghostBlock, origin, target);
   }
   
-  // Enable/disable navigation buttons
-  const prevBtn = document.getElementById('tut-prev-btn');
-  const nextBtn = document.getElementById('tut-next-btn');
-  prevBtn.disabled = stepIndex === 0;
-  // Always enable Next button - users can proceed regardless of completion
-  nextBtn.disabled = false;
-
-  // Completion detection: still track completion for visual feedback, but don't block Next button
-  if (step.requireComplete === true) {
-    const completionSpec = step.completeWhen || buildCompletionSpec(step);
-    if (completionSpec) {
-      setupCompletionWatcher(completionSpec, () => {
-        pointer.style.display = 'none';
-        const titleEl = document.getElementById('step-title');
-        if (titleEl && !titleEl.textContent.includes('✓')) {
-          titleEl.textContent = `${step.title} ✓`;
-        }
-      });
-    }
-  }
-
-  // Backdrop/dimming only for first step
-  const highlightBox = document.getElementById('highlight-box');
-  if (stepIndex === 0) {
-    highlightBox.classList.add('dim-backdrop');
-  } else {
-    highlightBox.classList.remove('dim-backdrop');
-  }
+  return highlightedEl;
 }
 
 // Highlight an element on the page
@@ -2807,8 +2679,31 @@ function previousStep() {
 }
 
 function showCongratulationsScreen() {
-  // Save achievement to storage
-  saveAchievement('tutorial_completed', 3);
+  // Calculate stars based on hints used
+  const totalSteps = tutorialData.length;
+  const stepsWithHints = Object.keys(hintsUsed).filter(stepIdx => hintsUsed[stepIdx]).length;
+  const hintPercentage = totalSteps > 0 ? (stepsWithHints / totalSteps) * 100 : 0;
+  
+  // Determine star rating based on hint usage
+  let stars = 3;
+  let scoreText = "3 STARS";
+  let scoreSubtext = "Perfect Score!";
+  let message = "You're a Scratch superstar! 🌟";
+  
+  if (hintPercentage > 50) {
+    stars = 1;
+    scoreText = "1 STAR";
+    scoreSubtext = "Good effort!";
+    message = "You completed it! Try again with fewer hints for more stars! 🌟";
+  } else if (hintPercentage > 20) {
+    stars = 2;
+    scoreText = "2 STARS";
+    scoreSubtext = "Great job!";
+    message = "Well done! Try using fewer hints next time for 3 stars! ⭐";
+  }
+  
+  // Save achievement to storage with calculated stars
+  saveAchievement('tutorial_completed', stars);
   
   // Clear watchers but keep overlay
   clearActiveWatchers();
@@ -2831,18 +2726,18 @@ function showCongratulationsScreen() {
       </div>
       
       <div class="stars-container">
-        <div class="star star-1">⭐</div>
-        <div class="star star-2">⭐</div>
-        <div class="star star-3">⭐</div>
+        ${stars >= 1 ? '<div class="star star-1">⭐</div>' : '<div class="star star-1" style="opacity: 0.3;">⭐</div>'}
+        ${stars >= 2 ? '<div class="star star-2">⭐</div>' : '<div class="star star-2" style="opacity: 0.3;">⭐</div>'}
+        ${stars >= 3 ? '<div class="star star-3">⭐</div>' : '<div class="star star-3" style="opacity: 0.3;">⭐</div>'}
       </div>
       
       <div class="congrats-score">
-        <div class="score-text">3 STARS</div>
-        <div class="score-subtext">Perfect Score!</div>
+        <div class="score-text">${scoreText}</div>
+        <div class="score-subtext">${scoreSubtext}</div>
       </div>
       
       <div class="congrats-message">
-        <p>You're a Scratch superstar! 🌟</p>
+        <p>${message}</p>
         <p>Keep learning and creating amazing projects!</p>
       </div>
       
@@ -2852,13 +2747,15 @@ function showCongratulationsScreen() {
   
   document.body.appendChild(congratsOverlay);
   
-  // Animate stars appearing
+  // Animate stars appearing (only the earned ones)
   setTimeout(() => {
-    const stars = congratsOverlay.querySelectorAll('.star');
-    stars.forEach((star, index) => {
+    const starsEls = congratsOverlay.querySelectorAll('.star');
+    starsEls.forEach((star, index) => {
+      if (index < stars) {
       setTimeout(() => {
         star.classList.add('star-appear');
       }, index * 300);
+      }
     });
   }, 100);
   
@@ -2867,6 +2764,20 @@ function showCongratulationsScreen() {
   closeBtn.addEventListener('click', () => {
     congratsOverlay.remove();
     closeTutorial();
+    // Try to reopen the extension popup
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ action: 'reopenPopup' }, (response) => {
+        // If that doesn't work, try opening popup directly
+        if (chrome.runtime.lastError || !response || !response.success) {
+          // Fallback: try to open popup URL (may not work, but worth trying)
+          try {
+            chrome.runtime.sendMessage({ action: 'openPopup' });
+          } catch (e) {
+            console.log('Could not reopen popup automatically');
+          }
+        }
+      });
+    }
   });
   
   // Close on backdrop click
@@ -2933,6 +2844,14 @@ function closeTutorial() {
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startTutorial') {
+    // Store tutorial metadata for progress tracking
+    if (request.mainLessonTitle !== undefined) {
+      tutorialMetadata.mainLessonTitle = request.mainLessonTitle;
+    }
+    if (request.miniLessonIndex !== undefined) {
+      tutorialMetadata.miniLessonIndex = request.miniLessonIndex;
+    }
+    
     // If we're in the editor iframe or the top editor page, run directly; otherwise forward
     if (location.hostname === 'projects.scratch.mit.edu' || isScratchEditor()) {
       injectTutorialCSS();

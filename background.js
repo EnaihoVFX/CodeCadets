@@ -35,6 +35,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
   
+  // Handle reopen popup request
+  if (request.action === 'reopenPopup' || request.action === 'openPopup') {
+    // Try to open the popup programmatically
+    // Note: This only works in response to user interaction and has strict limitations
+    chrome.action.openPopup().then(() => {
+      sendResponse({ success: true });
+    }).catch((error) => {
+      // If openPopup fails, try creating a popup window as fallback
+      chrome.windows.create({
+        url: chrome.runtime.getURL('popup.html'),
+        type: 'popup',
+        width: 420,
+        height: 600
+      }).then((window) => {
+        sendResponse({ success: true, windowId: window.id });
+      }).catch((fallbackError) => {
+        sendResponse({ success: false, error: error.message || fallbackError.message });
+      });
+    });
+    return true; // Keep message channel open for async response
+  }
+  
   // Handle START_SESSION
   if (request.type === 'START_SESSION') {
     sessionState.isRecording = true;
