@@ -1,0 +1,1276 @@
+{
+  "stage": {
+    "main": {
+      "css": [
+        "[aria-label='Stage']",
+        ".stage",
+        ".stage-wrapper",
+        "[class*='stage'] canvas",
+        "canvas[class*='stage']",
+        ".stage_monitor-container",
+        "[class*='stage_']",
+        "canvas"
+      ]
+    }
+  },
+  "sprite": {
+    "cat": {
+      "css": [
+        "[aria-label='Sprite1']",
+        "[aria-label*='Scratch Cat']",
+        ".sprite-selector-item[aria-label*='Sprite']",
+        ".sprite-list-item[aria-label*='Sprite']",
+        "[data-id='sprite-list-item-0']"
+      ],
+      "domtext": ["Scratch Cat", "Sprite1"]
+    }
+  },
+  "toolbox": {
+    "category": {
+      "motion": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-motion",
+          "[aria-label='Motion']",
+          "[data-category='motion']",
+          ".blocklyToolboxCategory[aria-label='Motion']",
+          ".blocklyToolboxItem[aria-label='Motion']",
+          ".blocklyTreeRow[aria-label='Motion']"
+        ],
+        "text": ["Motion"]
+      },
+      "looks": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-looks",
+          "[aria-label='Looks']",
+          "[data-category='looks']",
+          ".blocklyToolboxCategory[aria-label='Looks']",
+          ".blocklyToolboxItem[aria-label='Looks']",
+          ".blocklyTreeRow[aria-label='Looks']"
+        ],
+        "text": ["Looks"]
+      },
+      "sound": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-sound",
+          "[aria-label='Sound']",
+          "[data-category='sound']",
+          ".blocklyToolboxCategory[aria-label='Sound']",
+          ".blocklyToolboxItem[aria-label='Sound']",
+          ".blocklyTreeRow[aria-label='Sound']"
+        ],
+        "text": ["Sound"]
+      },
+      "events": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-events",
+          "[aria-label='Events']",
+          "[data-category='events']",
+          ".blocklyToolboxCategory[aria-label='Events']",
+          ".blocklyToolboxItem[aria-label='Events']",
+          ".blocklyTreeRow[aria-label='Events']"
+        ],
+        "text": ["Events"]
+      },
+      "control": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-control",
+          "[aria-label='Control']",
+          "[data-category='control']",
+          ".blocklyToolboxCategory[aria-label='Control']",
+          ".blocklyToolboxItem[aria-label='Control']",
+          ".blocklyTreeRow[aria-label='Control']"
+        ],
+        "text": ["Control"]
+      },
+      "sensing": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-sensing",
+          "[aria-label='Sensing']",
+          "[data-category='sensing']",
+          ".blocklyToolboxCategory[aria-label='Sensing']",
+          ".blocklyToolboxItem[aria-label='Sensing']",
+          ".blocklyTreeRow[aria-label='Sensing']"
+        ],
+        "text": ["Sensing"]
+      },
+      "operators": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-operators",
+          "[aria-label='Operators']",
+          "[data-category='operators']",
+          ".blocklyToolboxCategory[aria-label='Operators']",
+          ".blocklyToolboxItem[aria-label='Operators']",
+          ".blocklyTreeRow[aria-label='Operators']"
+        ],
+        "text": ["Operators"]
+      },
+      "variables": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-variables",
+          "[aria-label='Variables']",
+          "[data-category='variables']",
+          ".blocklyToolboxCategory[aria-label='Variables']",
+          ".blocklyToolboxItem[aria-label='Variables']",
+          ".blocklyTreeRow[aria-label='Variables']"
+        ],
+        "text": ["Variables"]
+      },
+      "myBlocks": {
+        "css": [
+          ".scratchCategoryMenuItem.scratchCategoryId-myBlocks",
+          "[aria-label='My Blocks']",
+          "[data-category='myBlocks']",
+          ".blocklyToolboxCategory[aria-label='My Blocks']",
+          ".blocklyToolboxItem[aria-label='My Blocks']",
+          ".blocklyTreeRow[aria-label='My Blocks']"
+        ],
+        "text": ["My Blocks"]
+      }
+    },
+    "flyout": {
+      "canvas": {
+        "css": [
+          ".blocklyFlyout .blocklyBlockCanvas",
+          ".blocklyFlyout canvas",
+          ".blocklyFlyout svg"
+        ]
+      }
+    }
+  },
+  "flyout": {
+    "block": {
+      "motion": {
+        "move_steps": {
+          "css": [
+            "g[data-id='motion_movesteps']",
+            "g[data-id*='motion_movesteps']",
+            "g[data-id*='motion_move_steps']"
+          ],
+          "flyoutText": "move 10 steps"
+        },
+        "turn_right": {
+          "css": [
+            "g[data-id='motion_turnright']",
+            "g[data-id*='motion_turnright']",
+            "g[data-id*='motion_turn_right']"
+          ],
+          "flyoutText": "turn 15 degrees"
+        },
+        "turn_left": {
+          "css": [
+            "g[data-id='motion_turnleft']",
+            "g[data-id*='motion_turnleft']",
+            "g[data-id*='motion_turn_left']"
+          ],
+          "flyoutText": "turn 15 degrees"
+        },
+        "go_to_xy": {
+          "css": [
+            "g[data-id='motion_gotoxy']",
+            "g[data-id*='motion_gotoxy']",
+            "g[data-id*='motion_go_to_xy']"
+          ],
+          "flyoutText": "go to x"
+        },
+        "go_to": {
+          "css": [
+            "g[data-id='motion_goto']",
+            "g[data-id*='motion_goto']",
+            "g[data-id*='motion_go_to']"
+          ],
+          "flyoutText": "go to"
+        },
+        "glide_sec_to": {
+          "css": [
+            "g[data-id='motion_glidesecstoxy']",
+            "g[data-id*='motion_glidesecstoxy']",
+            "g[data-id*='motion_glide_sec_to']"
+          ],
+          "flyoutText": "glide"
+        },
+        "point_in_direction": {
+          "css": [
+            "g[data-id='motion_pointindirection']",
+            "g[data-id*='motion_pointindirection']",
+            "g[data-id*='motion_point_in_direction']"
+          ],
+          "flyoutText": "point in direction"
+        },
+        "point_towards": {
+          "css": [
+            "g[data-id='motion_pointtowards']",
+            "g[data-id*='motion_pointtowards']",
+            "g[data-id*='motion_point_towards']"
+          ],
+          "flyoutText": "point towards"
+        },
+        "change_x_by": {
+          "css": [
+            "g[data-id='motion_changexby']",
+            "g[data-id*='motion_changexby']",
+            "g[data-id*='motion_change_x_by']"
+          ],
+          "flyoutText": "change x by"
+        },
+        "set_x_to": {
+          "css": [
+            "g[data-id='motion_setx']",
+            "g[data-id*='motion_setx']",
+            "g[data-id*='motion_set_x']"
+          ],
+          "flyoutText": "set x to"
+        },
+        "change_y_by": {
+          "css": [
+            "g[data-id='motion_changeyby']",
+            "g[data-id*='motion_changeyby']",
+            "g[data-id*='motion_change_y_by']"
+          ],
+          "flyoutText": "change y by"
+        },
+        "set_y_to": {
+          "css": [
+            "g[data-id='motion_sety']",
+            "g[data-id*='motion_sety']",
+            "g[data-id*='motion_set_y']"
+          ],
+          "flyoutText": "set y to"
+        },
+        "if_on_edge_bounce": {
+          "css": [
+            "g[data-id='motion_ifonedgebounce']",
+            "g[data-id*='motion_ifonedgebounce']",
+            "g[data-id*='motion_if_on_edge_bounce']"
+          ],
+          "flyoutText": "if on edge, bounce"
+        },
+        "set_rotation_style": {
+          "css": [
+            "g[data-id='motion_setrotationstyle']",
+            "g[data-id*='motion_setrotationstyle']",
+            "g[data-id*='motion_set_rotation_style']"
+          ],
+          "flyoutText": "set rotation style"
+        },
+        "x_position": {
+          "css": [
+            "g[data-id='motion_xposition']",
+            "g[data-id*='motion_xposition']",
+            "g[data-id*='motion_x_position']"
+          ],
+          "flyoutText": "x position"
+        },
+        "y_position": {
+          "css": [
+            "g[data-id='motion_yposition']",
+            "g[data-id*='motion_yposition']",
+            "g[data-id*='motion_y_position']"
+          ],
+          "flyoutText": "y position"
+        },
+        "direction": {
+          "css": [
+            "g[data-id='motion_direction']",
+            "g[data-id*='motion_direction']"
+          ],
+          "flyoutText": "direction"
+        }
+      },
+      "looks": {
+        "say": {
+          "css": [
+            "g[data-id='looks_say']",
+            "g[data-id*='looks_say']"
+          ],
+          "flyoutText": "say"
+        },
+        "say_for_secs": {
+          "css": [
+            "g[data-id='looks_sayforsecs']",
+            "g[data-id*='looks_sayforsecs']",
+            "g[data-id*='looks_say_for_secs']"
+          ],
+          "flyoutText": "say for seconds"
+        },
+        "think": {
+          "css": [
+            "g[data-id='looks_think']",
+            "g[data-id*='looks_think']"
+          ],
+          "flyoutText": "think"
+        },
+        "think_for_secs": {
+          "css": [
+            "g[data-id='looks_thinkforsecs']",
+            "g[data-id*='looks_thinkforsecs']",
+            "g[data-id*='looks_think_for_secs']"
+          ],
+          "flyoutText": "think for seconds"
+        },
+        "show": {
+          "css": [
+            "g[data-id='looks_show']",
+            "g[data-id*='looks_show']"
+          ],
+          "flyoutText": "show"
+        },
+        "hide": {
+          "css": [
+            "g[data-id='looks_hide']",
+            "g[data-id*='looks_hide']"
+          ],
+          "flyoutText": "hide"
+        },
+        "switch_costume": {
+          "css": [
+            "g[data-id='looks_switchcostumeto']",
+            "g[data-id*='looks_switchcostumeto']",
+            "g[data-id*='looks_switch_costume']"
+          ],
+          "flyoutText": "switch costume"
+        },
+        "next_costume": {
+          "css": [
+            "g[data-id='looks_nextcostume']",
+            "g[data-id*='looks_nextcostume']",
+            "g[data-id*='looks_next_costume']"
+          ],
+          "flyoutText": "next costume"
+        },
+        "switch_backdrop": {
+          "css": [
+            "g[data-id='looks_switchbackdropto']",
+            "g[data-id*='looks_switchbackdropto']",
+            "g[data-id*='looks_switch_backdrop']"
+          ],
+          "flyoutText": "switch backdrop"
+        },
+        "change_size_by": {
+          "css": [
+            "g[data-id='looks_changesizeby']",
+            "g[data-id*='looks_changesizeby']",
+            "g[data-id*='looks_change_size_by']"
+          ],
+          "flyoutText": "change size by"
+        },
+        "set_size_to": {
+          "css": [
+            "g[data-id='looks_setsizeto']",
+            "g[data-id*='looks_setsizeto']",
+            "g[data-id*='looks_set_size_to']"
+          ],
+          "flyoutText": "set size to"
+        },
+        "change_color_effect": {
+          "css": [
+            "g[data-id='looks_changeeffectby']",
+            "g[data-id*='looks_changeeffectby']",
+            "g[data-id*='looks_change_effect']"
+          ],
+          "flyoutText": "change color effect"
+        },
+        "set_color_effect": {
+          "css": [
+            "g[data-id='looks_seteffectto']",
+            "g[data-id*='looks_seteffectto']",
+            "g[data-id*='looks_set_effect']"
+          ],
+          "flyoutText": "set color effect"
+        },
+        "clear_graphic_effects": {
+          "css": [
+            "g[data-id='looks_cleargraphiceffects']",
+            "g[data-id*='looks_cleargraphiceffects']",
+            "g[data-id*='looks_clear_graphic_effects']"
+          ],
+          "flyoutText": "clear graphic effects"
+        },
+        "go_to_front_layer": {
+          "css": [
+            "g[data-id='looks_gotofrontlayer']",
+            "g[data-id*='looks_gotofrontlayer']",
+            "g[data-id*='looks_go_to_front_layer']"
+          ],
+          "flyoutText": "go to front layer"
+        },
+        "go_forward_layers": {
+          "css": [
+            "g[data-id='looks_goforwardlayers']",
+            "g[data-id*='looks_goforwardlayers']",
+            "g[data-id*='looks_go_forward_layers']"
+          ],
+          "flyoutText": "go forward layers"
+        },
+        "costume_number": {
+          "css": [
+            "g[data-id='looks_costumenumbername']",
+            "g[data-id*='looks_costumenumbername']",
+            "g[data-id*='looks_costume_number']"
+          ],
+          "flyoutText": "costume number"
+        },
+        "backdrop_number": {
+          "css": [
+            "g[data-id='looks_backdropnumbername']",
+            "g[data-id*='looks_backdropnumbername']",
+            "g[data-id*='looks_backdrop_number']"
+          ],
+          "flyoutText": "backdrop number"
+        },
+        "size": {
+          "css": [
+            "g[data-id='looks_size']",
+            "g[data-id*='looks_size']"
+          ],
+          "flyoutText": "size"
+        }
+      },
+      "sound": {
+        "play_sound": {
+          "css": [
+            "g[data-id='sound_play']",
+            "g[data-id*='sound_play']"
+          ],
+          "flyoutText": "play sound"
+        },
+        "play_sound_until_done": {
+          "css": [
+            "g[data-id='sound_playuntildone']",
+            "g[data-id*='sound_playuntildone']",
+            "g[data-id*='sound_play_until_done']"
+          ],
+          "flyoutText": "play sound until done"
+        },
+        "stop_all_sounds": {
+          "css": [
+            "g[data-id='sound_stopallsounds']",
+            "g[data-id*='sound_stopallsounds']",
+            "g[data-id*='sound_stop_all_sounds']"
+          ],
+          "flyoutText": "stop all sounds"
+        },
+        "change_effect_by": {
+          "css": [
+            "g[data-id='sound_changeeffectby']",
+            "g[data-id*='sound_changeeffectby']",
+            "g[data-id*='sound_change_effect_by']"
+          ],
+          "flyoutText": "change effect by"
+        },
+        "set_effect_to": {
+          "css": [
+            "g[data-id='sound_seteffectto']",
+            "g[data-id*='sound_seteffectto']",
+            "g[data-id*='sound_set_effect_to']"
+          ],
+          "flyoutText": "set effect to"
+        },
+        "clear_effects": {
+          "css": [
+            "g[data-id='sound_cleareffects']",
+            "g[data-id*='sound_cleareffects']",
+            "g[data-id*='sound_clear_effects']"
+          ],
+          "flyoutText": "clear effects"
+        },
+        "change_volume_by": {
+          "css": [
+            "g[data-id='sound_changevolumeby']",
+            "g[data-id*='sound_changevolumeby']",
+            "g[data-id*='sound_change_volume_by']"
+          ],
+          "flyoutText": "change volume by"
+        },
+        "set_volume_to": {
+          "css": [
+            "g[data-id='sound_setvolumeto']",
+            "g[data-id*='sound_setvolumeto']",
+            "g[data-id*='sound_set_volume_to']"
+          ],
+          "flyoutText": "set volume to"
+        },
+        "volume": {
+          "css": [
+            "g[data-id='sound_volume']",
+            "g[data-id*='sound_volume']"
+          ],
+          "flyoutText": "volume"
+        }
+      },
+      "events": {
+        "event_whenflagclicked": {
+          "css": [
+            "g[data-id='event_whenflagclicked']",
+            "g[data-id*='event_whenflagclicked']",
+            "g[data-id*='event_when_flag_clicked']",
+            ".blocklyFlyout g[data-id*='whenflagclicked']"
+          ],
+          "flyoutText": "when green flag clicked"
+        },
+        "when_green_flag_clicked": {
+          "css": [
+            "g[data-id='event_whenflagclicked']",
+            "g[data-id*='event_whenflagclicked']",
+            "g[data-id*='event_when_flag_clicked']"
+          ],
+          "flyoutText": "when green flag clicked"
+        },
+        "when_key_pressed": {
+          "css": [
+            "g[data-id='event_whenkeypressed']",
+            "g[data-id*='event_whenkeypressed']",
+            "g[data-id*='event_when_key_pressed']"
+          ],
+          "flyoutText": "when key pressed"
+        },
+        "when_sprite_clicked": {
+          "css": [
+            "g[data-id='event_whenthisspriteclicked']",
+            "g[data-id*='event_whenthisspriteclicked']",
+            "g[data-id*='event_when_this_sprite_clicked']"
+          ],
+          "flyoutText": "when this sprite clicked"
+        },
+        "when_stage_clicked": {
+          "css": [
+            "g[data-id='event_whenstageclicked']",
+            "g[data-id*='event_whenstageclicked']",
+            "g[data-id*='event_when_stage_clicked']"
+          ],
+          "flyoutText": "when stage clicked"
+        },
+        "when_backdrop_switches": {
+          "css": [
+            "g[data-id='event_whenbackdropswitchesto']",
+            "g[data-id*='event_whenbackdropswitchesto']",
+            "g[data-id*='event_when_backdrop_switches']"
+          ],
+          "flyoutText": "when backdrop switches to"
+        },
+        "when_loudness_greater_than": {
+          "css": [
+            "g[data-id='event_whenloudnessgreaterthan']",
+            "g[data-id*='event_whenloudnessgreaterthan']",
+            "g[data-id*='event_when_loudness_greater']"
+          ],
+          "flyoutText": "when loudness greater than"
+        },
+        "when_timer_greater_than": {
+          "css": [
+            "g[data-id='event_whentimergreaterthan']",
+            "g[data-id*='event_whentimergreaterthan']",
+            "g[data-id*='event_when_timer_greater']"
+          ],
+          "flyoutText": "when timer greater than"
+        },
+        "when_receive": {
+          "css": [
+            "g[data-id='event_broadcast']",
+            "g[data-id*='event_broadcast']",
+            "g[data-id*='event_when_receive']"
+          ],
+          "flyoutText": "when I receive"
+        },
+        "broadcast": {
+          "css": [
+            "g[data-id='event_broadcast']",
+            "g[data-id*='event_broadcast']"
+          ],
+          "flyoutText": "broadcast"
+        },
+        "broadcast_and_wait": {
+          "css": [
+            "g[data-id='event_broadcastandwait']",
+            "g[data-id*='event_broadcastandwait']",
+            "g[data-id*='event_broadcast_and_wait']"
+          ],
+          "flyoutText": "broadcast and wait"
+        }
+      },
+      "control": {
+        "wait": {
+          "css": [
+            "g[data-id='control_wait']",
+            "g[data-id*='control_wait']"
+          ],
+          "flyoutText": "wait"
+        },
+        "wait_until": {
+          "css": [
+            "g[data-id='control_waituntil']",
+            "g[data-id*='control_waituntil']",
+            "g[data-id*='control_wait_until']"
+          ],
+          "flyoutText": "wait until"
+        },
+        "repeat": {
+          "css": [
+            "g[data-id='control_repeat']",
+            "g[data-id*='control_repeat']"
+          ],
+          "flyoutText": "repeat"
+        },
+        "repeat_until": {
+          "css": [
+            "g[data-id='control_repeatuntil']",
+            "g[data-id*='control_repeatuntil']",
+            "g[data-id*='control_repeat_until']"
+          ],
+          "flyoutText": "repeat until"
+        },
+        "forever": {
+          "css": [
+            "g[data-id='control_forever']",
+            "g[data-id*='control_forever']"
+          ],
+          "flyoutText": "forever"
+        },
+        "if_then": {
+          "css": [
+            "g[data-id='control_if']",
+            "g[data-id*='control_if']"
+          ],
+          "flyoutText": "if"
+        },
+        "if_else": {
+          "css": [
+            "g[data-id='control_if_else']",
+            "g[data-id*='control_if_else']",
+            "g[data-id*='control_ifelse']"
+          ],
+          "flyoutText": "if else"
+        },
+        "stop_all": {
+          "css": [
+            "g[data-id='control_stop']",
+            "g[data-id*='control_stop']"
+          ],
+          "flyoutText": "stop"
+        },
+        "stop_other_scripts": {
+          "css": [
+            "g[data-id='control_stop']",
+            "g[data-id*='control_stop']",
+            "g[data-id*='control_stop_other']"
+          ],
+          "flyoutText": "stop other scripts"
+        },
+        "create_clone_of": {
+          "css": [
+            "g[data-id='control_create_clone_of']",
+            "g[data-id*='control_create_clone_of']",
+            "g[data-id*='control_createclone']"
+          ],
+          "flyoutText": "create clone of"
+        },
+        "delete_this_clone": {
+          "css": [
+            "g[data-id='control_delete_this_clone']",
+            "g[data-id*='control_delete_this_clone']",
+            "g[data-id*='control_deleteclone']"
+          ],
+          "flyoutText": "delete this clone"
+        },
+        "when_i_start_as_clone": {
+          "css": [
+            "g[data-id='control_start_as_clone']",
+            "g[data-id*='control_start_as_clone']",
+            "g[data-id*='control_startasclone']"
+          ],
+          "flyoutText": "when I start as a clone"
+        }
+      },
+      "sensing": {
+        "touching": {
+          "css": [
+            "g[data-id='sensing_touchingobject']",
+            "g[data-id*='sensing_touchingobject']",
+            "g[data-id*='sensing_touching']"
+          ],
+          "flyoutText": "touching"
+        },
+        "touching_color": {
+          "css": [
+            "g[data-id='sensing_touchingcolor']",
+            "g[data-id*='sensing_touchingcolor']",
+            "g[data-id*='sensing_touching_color']"
+          ],
+          "flyoutText": "touching color"
+        },
+        "color_is_touching": {
+          "css": [
+            "g[data-id='sensing_coloristouching']",
+            "g[data-id*='sensing_coloristouching']",
+            "g[data-id*='sensing_color_is_touching']"
+          ],
+          "flyoutText": "color is touching"
+        },
+        "distance_to": {
+          "css": [
+            "g[data-id='sensing_distanceto']",
+            "g[data-id*='sensing_distanceto']",
+            "g[data-id*='sensing_distance_to']"
+          ],
+          "flyoutText": "distance to"
+        },
+        "ask_and_wait": {
+          "css": [
+            "g[data-id='sensing_askandwait']",
+            "g[data-id*='sensing_askandwait']",
+            "g[data-id*='sensing_ask_and_wait']"
+          ],
+          "flyoutText": "ask and wait"
+        },
+        "answer": {
+          "css": [
+            "g[data-id='sensing_answer']",
+            "g[data-id*='sensing_answer']"
+          ],
+          "flyoutText": "answer"
+        },
+        "key_pressed": {
+          "css": [
+            "g[data-id='sensing_keypressed']",
+            "g[data-id*='sensing_keypressed']",
+            "g[data-id*='sensing_key_pressed']"
+          ],
+          "flyoutText": "key pressed"
+        },
+        "mouse_down": {
+          "css": [
+            "g[data-id='sensing_mousedown']",
+            "g[data-id*='sensing_mousedown']",
+            "g[data-id*='sensing_mouse_down']"
+          ],
+          "flyoutText": "mouse down"
+        },
+        "mouse_x": {
+          "css": [
+            "g[data-id='sensing_mousex']",
+            "g[data-id*='sensing_mousex']",
+            "g[data-id*='sensing_mouse_x']"
+          ],
+          "flyoutText": "mouse x"
+        },
+        "mouse_y": {
+          "css": [
+            "g[data-id='sensing_mousey']",
+            "g[data-id*='sensing_mousey']",
+            "g[data-id*='sensing_mouse_y']"
+          ],
+          "flyoutText": "mouse y"
+        },
+        "loudness": {
+          "css": [
+            "g[data-id='sensing_loudness']",
+            "g[data-id*='sensing_loudness']"
+          ],
+          "flyoutText": "loudness"
+        },
+        "timer": {
+          "css": [
+            "g[data-id='sensing_timer']",
+            "g[data-id*='sensing_timer']"
+          ],
+          "flyoutText": "timer"
+        },
+        "reset_timer": {
+          "css": [
+            "g[data-id='sensing_resettimer']",
+            "g[data-id*='sensing_resettimer']",
+            "g[data-id*='sensing_reset_timer']"
+          ],
+          "flyoutText": "reset timer"
+        },
+        "of": {
+          "css": [
+            "g[data-id='sensing_of']",
+            "g[data-id*='sensing_of']"
+          ],
+          "flyoutText": "of"
+        },
+        "current": {
+          "css": [
+            "g[data-id='sensing_current']",
+            "g[data-id*='sensing_current']"
+          ],
+          "flyoutText": "current"
+        },
+        "days_since_2000": {
+          "css": [
+            "g[data-id='sensing_dayssince2000']",
+            "g[data-id*='sensing_dayssince2000']",
+            "g[data-id*='sensing_days_since']"
+          ],
+          "flyoutText": "days since 2000"
+        },
+        "username": {
+          "css": [
+            "g[data-id='sensing_username']",
+            "g[data-id*='sensing_username']"
+          ],
+          "flyoutText": "username"
+        }
+      },
+      "operators": {
+        "add": {
+          "css": [
+            "g[data-id='operator_add']",
+            "g[data-id*='operator_add']"
+          ],
+          "flyoutText": "+"
+        },
+        "subtract": {
+          "css": [
+            "g[data-id='operator_subtract']",
+            "g[data-id*='operator_subtract']"
+          ],
+          "flyoutText": "-"
+        },
+        "multiply": {
+          "css": [
+            "g[data-id='operator_multiply']",
+            "g[data-id*='operator_multiply']"
+          ],
+          "flyoutText": "*"
+        },
+        "divide": {
+          "css": [
+            "g[data-id='operator_divide']",
+            "g[data-id*='operator_divide']"
+          ],
+          "flyoutText": "/"
+        },
+        "random": {
+          "css": [
+            "g[data-id='operator_random']",
+            "g[data-id*='operator_random']"
+          ],
+          "flyoutText": "pick random"
+        },
+        "gt": {
+          "css": [
+            "g[data-id='operator_gt']",
+            "g[data-id*='operator_gt']",
+            "g[data-id*='operator_greater']"
+          ],
+          "flyoutText": ">"
+        },
+        "lt": {
+          "css": [
+            "g[data-id='operator_lt']",
+            "g[data-id*='operator_lt']",
+            "g[data-id*='operator_less']"
+          ],
+          "flyoutText": "<"
+        },
+        "equals": {
+          "css": [
+            "g[data-id='operator_equals']",
+            "g[data-id*='operator_equals']"
+          ],
+          "flyoutText": "="
+        },
+        "and": {
+          "css": [
+            "g[data-id='operator_and']",
+            "g[data-id*='operator_and']"
+          ],
+          "flyoutText": "and"
+        },
+        "or": {
+          "css": [
+            "g[data-id='operator_or']",
+            "g[data-id*='operator_or']"
+          ],
+          "flyoutText": "or"
+        },
+        "not": {
+          "css": [
+            "g[data-id='operator_not']",
+            "g[data-id*='operator_not']"
+          ],
+          "flyoutText": "not"
+        },
+        "join": {
+          "css": [
+            "g[data-id='operator_join']",
+            "g[data-id*='operator_join']"
+          ],
+          "flyoutText": "join"
+        },
+        "letter_of": {
+          "css": [
+            "g[data-id='operator_letter_of']",
+            "g[data-id*='operator_letter_of']",
+            "g[data-id*='operator_letterof']"
+          ],
+          "flyoutText": "letter of"
+        },
+        "length": {
+          "css": [
+            "g[data-id='operator_length']",
+            "g[data-id*='operator_length']"
+          ],
+          "flyoutText": "length"
+        },
+        "contains": {
+          "css": [
+            "g[data-id='operator_contains']",
+            "g[data-id*='operator_contains']"
+          ],
+          "flyoutText": "contains"
+        },
+        "mod": {
+          "css": [
+            "g[data-id='operator_mod']",
+            "g[data-id*='operator_mod']"
+          ],
+          "flyoutText": "mod"
+        },
+        "round": {
+          "css": [
+            "g[data-id='operator_round']",
+            "g[data-id*='operator_round']"
+          ],
+          "flyoutText": "round"
+        },
+        "abs": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "abs"
+        },
+        "floor": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "floor"
+        },
+        "ceiling": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "ceiling"
+        },
+        "sqrt": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "sqrt"
+        },
+        "sin": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "sin"
+        },
+        "cos": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "cos"
+        },
+        "tan": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "tan"
+        },
+        "asin": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "asin"
+        },
+        "acos": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "acos"
+        },
+        "atan": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "atan"
+        },
+        "ln": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "ln"
+        },
+        "log": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "log"
+        },
+        "e_exp": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "e^"
+        },
+        "ten_exp": {
+          "css": [
+            "g[data-id='operator_mathop']",
+            "g[data-id*='operator_mathop']"
+          ],
+          "flyoutText": "10^"
+        }
+      },
+      "variables": {
+        "set_variable_to": {
+          "css": [
+            "g[data-id='data_setvariableto']",
+            "g[data-id*='data_setvariableto']",
+            "g[data-id*='data_set_variable_to']"
+          ],
+          "flyoutText": "set"
+        },
+        "change_variable_by": {
+          "css": [
+            "g[data-id='data_changevariableby']",
+            "g[data-id*='data_changevariableby']",
+            "g[data-id*='data_change_variable_by']"
+          ],
+          "flyoutText": "change"
+        },
+        "show_variable": {
+          "css": [
+            "g[data-id='data_showvariable']",
+            "g[data-id*='data_showvariable']",
+            "g[data-id*='data_show_variable']"
+          ],
+          "flyoutText": "show variable"
+        },
+        "hide_variable": {
+          "css": [
+            "g[data-id='data_hidevariable']",
+            "g[data-id*='data_hidevariable']",
+            "g[data-id*='data_hide_variable']"
+          ],
+          "flyoutText": "hide variable"
+        },
+        "variable": {
+          "css": [
+            "g[data-id='data_variable']",
+            "g[data-id*='data_variable']"
+          ],
+          "flyoutText": "variable"
+        }
+      },
+      "lists": {
+        "add_to_list": {
+          "css": [
+            "g[data-id='data_addtolist']",
+            "g[data-id*='data_addtolist']",
+            "g[data-id*='data_add_to_list']"
+          ],
+          "flyoutText": "add to list"
+        },
+        "delete_from_list": {
+          "css": [
+            "g[data-id='data_deleteoflist']",
+            "g[data-id*='data_deleteoflist']",
+            "g[data-id*='data_delete_from_list']"
+          ],
+          "flyoutText": "delete from list"
+        },
+        "delete_all_from_list": {
+          "css": [
+            "g[data-id='data_deletealloflist']",
+            "g[data-id*='data_deletealloflist']",
+            "g[data-id*='data_delete_all_from_list']"
+          ],
+          "flyoutText": "delete all from list"
+        },
+        "insert_at_list": {
+          "css": [
+            "g[data-id='data_insertatlist']",
+            "g[data-id*='data_insertatlist']",
+            "g[data-id*='data_insert_at_list']"
+          ],
+          "flyoutText": "insert at list"
+        },
+        "replace_item_at_list": {
+          "css": [
+            "g[data-id='data_replaceitemoflist']",
+            "g[data-id*='data_replaceitemoflist']",
+            "g[data-id*='data_replace_item_at_list']"
+          ],
+          "flyoutText": "replace item at list"
+        },
+        "item_of_list": {
+          "css": [
+            "g[data-id='data_itemoflist']",
+            "g[data-id*='data_itemoflist']",
+            "g[data-id*='data_item_of_list']"
+          ],
+          "flyoutText": "item of list"
+        },
+        "item_num_of_list": {
+          "css": [
+            "g[data-id='data_itemnumoflist']",
+            "g[data-id*='data_itemnumoflist']",
+            "g[data-id*='data_item_num_of_list']"
+          ],
+          "flyoutText": "item num of list"
+        },
+        "length_of_list": {
+          "css": [
+            "g[data-id='data_lengthoflist']",
+            "g[data-id*='data_lengthoflist']",
+            "g[data-id*='data_length_of_list']"
+          ],
+          "flyoutText": "length of list"
+        },
+        "list_contains": {
+          "css": [
+            "g[data-id='data_listcontainsitem']",
+            "g[data-id*='data_listcontainsitem']",
+            "g[data-id*='data_list_contains']"
+          ],
+          "flyoutText": "list contains"
+        },
+        "show_list": {
+          "css": [
+            "g[data-id='data_showlist']",
+            "g[data-id*='data_showlist']",
+            "g[data-id*='data_show_list']"
+          ],
+          "flyoutText": "show list"
+        },
+        "hide_list": {
+          "css": [
+            "g[data-id='data_hidelist']",
+            "g[data-id*='data_hidelist']",
+            "g[data-id*='data_hide_list']"
+          ],
+          "flyoutText": "hide list"
+        }
+      }
+    }
+  },
+  "workspace": {
+    "canvas": {
+      "css": [
+        ".blocklyBlockCanvas",
+        ".blocklyWorkspace canvas",
+        ".blocklyMainBackground"
+      ]
+    }
+  },
+  "sprites": {
+    "list": {
+      "css": [
+        ".sprite-selector",
+        ".sprite-selector_scroll-wrapper",
+        ".sprite-list",
+        "[class*='sprite-selector']"
+      ]
+    },
+    "add_button": {
+      "css": [
+        ".sprite-selector_add-button",
+        "button[title*='Choose a Sprite']",
+        "button[aria-label*='Choose a Sprite']",
+        "[data-id='sprite-selector-add-button']"
+      ]
+    }
+  },
+  "backdrops": {
+    "add_button": {
+      "css": [
+        "button[title*='Choose a Backdrop']",
+        "button[aria-label*='Choose a Backdrop']",
+        "[data-id='backdrop-selector-add-button']"
+      ]
+    }
+  },
+  "code": {
+    "tab": {
+      "css": [
+        "button[aria-controls*='react-tabs'][aria-selected='true']",
+        "[data-tab='code']",
+        "button[aria-label*='Code']"
+      ]
+    },
+    "costumes": {
+      "css": [
+        "button[aria-label*='Costumes']",
+        "[data-tab='costumes']"
+      ]
+    },
+    "sounds": {
+      "css": [
+        "button[aria-label*='Sounds']",
+        "[data-tab='sounds']"
+      ]
+    }
+  },
+  "ui": {
+    "green_flag": {
+      "css": [
+        ".green-flag",
+        ".stage-header_green-flag",
+        ".stage-header .green-flag",
+        ".controls .green-flag",
+        ".controls_controls-container_FKkXX .green-flag_green-flag_eiU2I",
+        "img.green-flag_green-flag_eiU2I[title='Go']",
+        "img[title='Go']",
+        "button[title*='Go']",
+        "button[aria-label*='Go']",
+        "button[aria-label*='Start']",
+        "[data-id='green-flag-button']"
+      ],
+      "domtext": ["Go"]
+    },
+    "stop": {
+      "css": [
+      ".stop-all",
+      ".controls_controls-container_FKkXX .stop-all_stop-all_pluqe",
+      "img.stop-all_stop-all_pluqe[title='Stop']",
+      "img[title='Stop']",
+      "button[title*='Stop']",
+        "button[aria-label*='Stop']",
+        "[data-id='stop-button']"
+      ]
+    },
+    "fullscreen": {
+      "css": [
+        "button[title*='Enter full screen']",
+        "button[title*='Exit full screen']",
+        ".stage-header_fullscreen-button",
+        "[data-id='fullscreen-button']"
+      ]
+    },
+    "small_stage": {
+      "css": [
+        "button[title*='Small stage layout']",
+        "[data-id='small-stage-button']"
+      ]
+    },
+    "large_stage": {
+      "css": [
+        "button[title*='Large stage layout']",
+        "[data-id='large-stage-button']"
+      ]
+    }
+  }
+}

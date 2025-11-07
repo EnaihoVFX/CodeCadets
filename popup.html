@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scratch AI Learning Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+body {
+  width: 420px;
+  font-family: 'Press Start 2P', monospace;
+  background: #000;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+  max-height: 600px;
+  overflow: hidden;
+  border: 8px solid #10B981;
+  background: #0a0a0a;
+  box-shadow: 0 0 0 4px #7C3AED, 0 0 40px rgba(16, 185, 129, 0.5);
+  position: relative;
+}
+
+.container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(16, 185, 129, 0.1);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes scanline {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+.header {
+  background: #000;
+  color: #10B981;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 4px solid #10B981;
+  min-height: 100px;
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #7C3AED;
+}
+
+.logo {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+  object-position: center;
+  flex-shrink: 0;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(4px 4px 0px #10B981) drop-shadow(8px 8px 0px rgba(16, 185, 129, 0.3));
+  animation: logoBounce 2s ease-in-out infinite;
+}
+
+@keyframes logoBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  background: #000;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.main-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(0deg, transparent 24%, rgba(16, 185, 129, .05) 25%, rgba(16, 185, 129, .05) 26%, transparent 27%),
+    linear-gradient(90deg, transparent 24%, rgba(16, 185, 129, .05) 25%, rgba(16, 185, 129, .05) 26%, transparent 27%);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.top-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 30px;
+  align-items: flex-start;
+}
+
+.intro-btn {
+  flex: 1;
+  padding: 20px;
+  background: #10B981;
+  color: #000;
+  border: 4px solid #10B981;
+  font-size: 14px;
+  font-weight: normal;
+  font-family: 'Press Start 2P', monospace;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+  position: relative;
+  letter-spacing: 3px;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 6px 6px 0 0 #7C3AED;
+  animation: buttonPulse 2s ease-in-out infinite;
+}
+
+.achievements-btn {
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  background: #7C3AED;
+  color: #000;
+  border: 4px solid #7C3AED;
+  font-size: 32px;
+  font-weight: normal;
+  font-family: 'Press Start 2P', monospace;
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.6), 6px 6px 0 0 #10B981;
+  animation: buttonPulse 2s ease-in-out infinite;
+}
+
+.achievements-btn:hover {
+  background: #8B5CF6;
+  border-color: #8B5CF6;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.8), 0 0 60px rgba(16, 185, 129, 0.4), 6px 6px 0 0 #10B981;
+  animation: none;
+}
+
+.achievements-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.8);
+}
+
+@keyframes buttonPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 6px 6px 0 0 #7C3AED;
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.8), 0 0 40px rgba(124, 58, 237, 0.4), 6px 6px 0 0 #7C3AED;
+  }
+}
+
+.intro-btn::before {
+  content: '🎮';
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  animation: gamepadFloat 1.5s ease-in-out infinite;
+}
+
+@keyframes gamepadFloat {
+  0%, 100% { transform: translateY(-50%) rotate(-5deg); }
+  50% { transform: translateY(-60%) rotate(5deg); }
+}
+
+
+
+.intro-btn:hover {
+  background: #7C3AED;
+  border-color: #7C3AED;
+  color: #10B981;
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.8), 0 0 60px rgba(16, 185, 129, 0.4), 6px 6px 0 0 #10B981;
+  animation: none;
+}
+
+.intro-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+}
+
+.lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.lesson-box {
+  background: #000;
+  border: 3px solid #10B981;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-align: center;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.lesson-box::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: -3px;
+  bottom: -3px;
+  border: 3px solid #7C3AED;
+  z-index: -1;
+  transition: all 0.1s;
+}
+
+.lesson-box:hover {
+  background: #10B981;
+  color: #000;
+}
+
+.lesson-box:hover .lesson-number,
+.lesson-box:hover .lesson-title {
+  color: #000;
+}
+
+.lesson-box:hover::before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.lesson-box:active {
+  transform: translate(2px, 2px);
+}
+
+.lesson-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.lesson-icon {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 6px;
+  display: block;
+  filter: drop-shadow(2px 2px 0px rgba(124, 58, 237, 0.5));
+}
+
+.lesson-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  margin-bottom: 4px;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(2px 2px 0px rgba(124, 58, 237, 0.5));
+}
+
+.lesson-box .lesson-number {
+  font-size: 7px;
+  color: #7C3AED;
+  font-weight: normal;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.lesson-box .lesson-title {
+  font-size: 8px;
+  color: #10B981;
+  font-weight: normal;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+/* Custom scrollbar */
+.main-content::-webkit-scrollbar {
+  width: 12px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #000;
+  border: 2px solid #10B981;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #10B981;
+  border: 2px solid #000;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #7C3AED;
+}
+
+.loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  border: 8px solid #10B981;
+}
+
+.loading p {
+  margin-top: 20px;
+  color: #10B981;
+  font-weight: normal;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #10B981;
+  position: relative;
+  animation: spin 1s linear infinite;
+}
+
+.spinner::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 4px solid #7C3AED;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Achievements View */
+.achievements-view {
+  position: relative;
+  z-index: 1;
+}
+
+.achievements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 4px solid #10B981;
+}
+
+.achievements-header h2 {
+  font-size: 18px;
+  color: #10B981;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.achievements-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+  padding: 15px;
+  background: #000;
+  border: 3px solid #7C3AED;
+  position: relative;
+}
+
+.achievements-stats::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: -3px;
+  bottom: -3px;
+  border: 3px solid #10B981;
+  z-index: -1;
+}
+
+.stat-box {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+}
+
+.stat-value {
+  font-size: 24px;
+  color: #10B981;
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.stat-label {
+  font-size: 8px;
+  color: #7C3AED;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.back-btn {
+  padding: 10px 20px;
+  background: #000;
+  color: #10B981;
+  border: 3px solid #10B981;
+  font-size: 10px;
+  font-family: 'Press Start 2P', monospace;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+}
+
+.back-btn:hover {
+  background: #10B981;
+  color: #000;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+}
+
+.back-btn:active {
+  transform: translate(2px, 2px);
+}
+
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.achievement-card {
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  border: 4px solid #10B981;
+  padding: 20px;
+  position: relative;
+  transition: all 0.2s;
+  overflow: hidden;
+  animation: cardSlideIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.achievement-card::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: -3px;
+  bottom: -3px;
+  border: 3px solid #7C3AED;
+  z-index: -1;
+  transition: all 0.2s;
+}
+
+.achievement-card::after {
+  content: '✨';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 40px;
+  opacity: 0.1;
+  animation: sparkleRotate 3s linear infinite;
+}
+
+@keyframes sparkleRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.achievement-card:hover {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #000;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+}
+
+.achievement-card:hover::before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-color: #047857;
+}
+
+.achievement-card:hover::after {
+  opacity: 0.3;
+}
+
+.achievement-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  display: block;
+  filter: drop-shadow(2px 2px 0px rgba(124, 58, 237, 0.5));
+  animation: iconFloat 2s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.achievement-title {
+  font-size: 12px;
+  color: #10B981;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+.achievement-card:hover .achievement-title {
+  color: #000;
+}
+
+.achievement-description {
+  font-size: 9px;
+  color: #7C3AED;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+.achievement-card:hover .achievement-description {
+  color: #000;
+}
+
+.achievement-stars {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 10px;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.achievement-card:hover .achievement-stars {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.achievement-star {
+  font-size: 48px;
+  filter: drop-shadow(3px 3px 0px rgba(124, 58, 237, 0.6));
+  animation: starSparkle 2s ease-in-out infinite;
+  position: relative;
+}
+
+.achievement-star::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: starGlow 2s ease-in-out infinite;
+}
+
+@keyframes starGlow {
+  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+.achievement-star:nth-child(1) { 
+  animation-delay: 0s; 
+}
+.achievement-star:nth-child(2) { 
+  animation-delay: 0.3s; 
+}
+.achievement-star:nth-child(3) { 
+  animation-delay: 0.6s; 
+}
+
+@keyframes starSparkle {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg); 
+    filter: drop-shadow(3px 3px 0px rgba(124, 58, 237, 0.6));
+  }
+  50% { 
+    transform: scale(1.15) rotate(180deg); 
+    filter: drop-shadow(5px 5px 10px rgba(251, 191, 36, 0.8));
+  }
+}
+
+.achievement-date {
+  font-size: 8px;
+  color: #7C3AED;
+  margin-top: 12px;
+  text-align: center;
+  padding-top: 12px;
+  border-top: 2px solid rgba(124, 58, 237, 0.3);
+}
+
+.achievement-card:hover .achievement-date {
+  color: #000;
+  border-top-color: rgba(0, 0, 0, 0.3);
+}
+
+.no-achievements {
+  text-align: center;
+  padding: 60px 20px;
+  color: #7C3AED;
+  font-size: 12px;
+  line-height: 1.6;
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  border: 4px solid #7C3AED;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.no-achievements::before {
+  content: '⭐';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  font-size: 150px;
+  opacity: 0.05;
+  animation: starRotate 20s linear infinite;
+}
+
+@keyframes starRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-achievements-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  display: block;
+  animation: bounce 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.5));
+}
+
+.no-achievements-title {
+  font-size: 16px;
+  color: #10B981;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.no-achievements-text {
+  font-size: 10px;
+  color: #7C3AED;
+  margin: 10px 0;
+  line-height: 1.8;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <img id="logo-img" alt="Scratch Helper Logo" class="logo">
+    </header>
+
+    <main class="main-content">
+      <div class="top-buttons">
+        <button class="intro-btn btn-primary" id="intro-btn">► GAME MAKER</button>
+        <button class="achievements-btn" id="achievements-btn" title="Achievements">🏆</button>
+      </div>
+      
+      <div class="lessons-grid" id="lessons-grid">
+        <!-- Lessons will be generated here -->
+      </div>
+      
+      <!-- Achievements View (hidden by default) -->
+      <div class="achievements-view" id="achievements-view" style="display: none;">
+        <div class="achievements-header">
+          <h2>🏆 Your Achievements</h2>
+          <button class="back-btn" id="back-btn">← Back</button>
+        </div>
+        <div class="achievements-list" id="achievements-list">
+          <!-- Achievements will be loaded here -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>LOADING...</p>
+    </div>
+  </div>
+
+  <script src="tutorial-data.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
