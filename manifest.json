@@ -8,11 +8,14 @@
     "activeTab",
     "webNavigation",
     "downloads",
-    "windows"
+    "windows",
+    "scripting"
   ],
   "host_permissions": [
     "https://generativelanguage.googleapis.com/*",
-    "https://cdnjs.cloudflare.com/*"
+    "https://cdnjs.cloudflare.com/*",
+    "https://scratch.mit.edu/*",
+    "https://projects.scratch.mit.edu/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -34,13 +37,12 @@
       ],
       "js": ["selector-map.js", "content.js"],
       "all_frames": true,
-      "run_at": "document_idle",
-      "match_origin_as_fallback": true
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["selector-map.json", "mascot.png", "vendor/jszip.min.js"],
+      "resources": ["selector-map.json", "mascot.png", "logo.png", "vendor/jszip.min.js"],
       "matches": ["https://scratch.mit.edu/*", "https://projects.scratch.mit.edu/*"]
     }
   ]

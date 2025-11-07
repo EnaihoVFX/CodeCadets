@@ -3,6 +3,9 @@
 
 console.log('Scratch AI Assistant content script loaded');
 
+// Signal that content script is ready
+window.scratchAIContentScriptReady = true;
+
 let tutorialOverlay = null;
 let currentTutorialStep = 0;
 let tutorialData = [];
@@ -122,19 +125,53 @@ const KEY_ALIASES = {
   'flyout.block.events.whenflagclicked': 'flyout.block.events.event_whenflagclicked'
 };
 
-// Create tutorial overlay
+// Create tutorial overlay with splash screen
 function createTutorialOverlay() {
   // Remove existing overlay if any
   if (tutorialOverlay) {
     tutorialOverlay.remove();
   }
 
-  // Create overlay container - simplified retro design
+  // Get logo and mascot URLs
+  let logoUrl, mascotUrl;
+  try {
+    logoUrl = chrome.runtime.getURL('logo.png');
+    mascotUrl = chrome.runtime.getURL('mascot.png');
+  } catch (e) {
+    console.error('Error getting resource URLs:', e);
+    logoUrl = '';
+    mascotUrl = '';
+  }
+
+  // Create overlay container with splash screen
   tutorialOverlay = document.createElement('div');
   tutorialOverlay.id = 'scratch-tutorial-overlay';
   tutorialOverlay.innerHTML = `
     <div class="tutorial-overlay-backdrop"></div>
-    <div class="tutorial-overlay-content" id="tutorial-card">
+    
+    <!-- Splash Screen -->
+    <div class="tutorial-splash" id="tutorial-splash">
+      <div class="splash-logo-container">
+        <img src="${logoUrl}" alt="Logo" class="splash-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+        <div class="splash-logo-fallback" style="display: none; font-size: 48px; color: #fff; font-family: 'Press Start 2P', monospace;">CODE<br/>CADETS</div>
+          </div>
+        </div>
+    
+    <!-- Welcome Screen with Mascot -->
+    <div class="tutorial-welcome" id="tutorial-welcome" style="display: none;">
+      <div class="welcome-mascot-container">
+        <div class="welcome-speech-bubble">
+          <div class="speech-text">WELCOME! LET'S LEARN SCRATCH TOGETHER. I'LL GUIDE YOU THROUGH EACH STEP.</div>
+        </div>
+        <img src="${mascotUrl}" alt="Tutorial Helper" class="welcome-mascot" />
+      </div>
+      <button id="welcome-next-btn" class="welcome-next-btn">
+        <span class="btn-text">NEXT →</span>
+      </button>
+    </div>
+    
+    <!-- Main Tutorial Card (hidden initially) -->
+    <div class="tutorial-overlay-content" id="tutorial-card" style="display: none;">
       <div class="tutorial-header" id="tutorial-drag-handle">
         <div class="tutorial-counter">STEP <span id="step-num">1</span>/<span id="total-steps">?</span></div>
           <div class="tutorial-progress-bar">
@@ -164,6 +201,15 @@ function createTutorialOverlay() {
         </button>
       </div>
     </div>
+    
+    <!-- Corner Mascot (hidden initially) -->
+    <div class="corner-mascot" id="corner-mascot" style="display: none;">
+      <div class="corner-speech-bubble" id="corner-speech-bubble">
+        <div class="corner-speech-text" id="corner-speech-text">READY TO START!</div>
+      </div>
+      <img src="${mascotUrl}" alt="Helper" class="corner-mascot-img" />
+    </div>
+    
     <div class="tutorial-highlight" id="highlight-box"></div>
     <div class="tutorial-pointer" id="tutorial-pointer">
       <div class="pointer-dot"></div>
@@ -172,12 +218,94 @@ function createTutorialOverlay() {
   `;
   
   document.body.appendChild(tutorialOverlay);
-  // Lift the card out of the click-through overlay to ensure reliable clicks
-  const cardEl = tutorialOverlay.querySelector('#tutorial-card');
-  if (cardEl) {
-    document.body.appendChild(cardEl);
+  
+  // Start splash screen animation
+  startSplashSequence();
+}
+
+// Handle splash screen sequence
+function startSplashSequence() {
+  // Wait a bit for DOM to be ready
+  setTimeout(() => {
+    const splash = document.getElementById('tutorial-splash');
+    const welcome = document.getElementById('tutorial-welcome');
+    const card = document.getElementById('tutorial-card');
+    const cornerMascot = document.getElementById('corner-mascot');
+    
+    if (!splash) return;
+    
+    // Step 1: Show logo splash, then fade to welcome
+    setTimeout(() => {
+      if (splash) {
+        splash.classList.add('fade-out');
+        setTimeout(() => {
+          if (splash) splash.style.display = 'none';
+          if (welcome) {
+            welcome.style.display = 'flex';
+            welcome.classList.add('fade-in');
+            // Attach button listener when welcome screen appears
+            attachWelcomeButtonListener();
+          }
+        }, 500);
+      }
+    }, 1500);
+  }, 100);
+}
+
+// Attach welcome button listener
+function attachWelcomeButtonListener() {
+  const welcomeNextBtn = document.getElementById('welcome-next-btn');
+  const welcome = document.getElementById('tutorial-welcome');
+  const card = document.getElementById('tutorial-card');
+  const cornerMascot = document.getElementById('corner-mascot');
+  
+  if (!welcomeNextBtn) {
+    // Retry if button not found yet
+    setTimeout(() => attachWelcomeButtonListener(), 100);
+    return;
   }
+  
+  welcomeNextBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Hide speech bubble first
+    const speechBubble = document.querySelector('.welcome-speech-bubble');
+    if (speechBubble) {
+      speechBubble.style.opacity = '0';
+      speechBubble.style.transition = 'opacity 0.3s';
+    }
+    
+    // Animate mascot shrinking and moving to corner
+    const welcomeMascot = document.querySelector('.welcome-mascot');
+    const welcomeContainer = document.querySelector('.welcome-mascot-container');
+    
+    if (welcomeMascot) {
+      welcomeMascot.classList.add('shrink-to-corner');
+    }
+    if (welcomeContainer) {
+      welcomeContainer.classList.add('move-to-corner');
+    }
+    
+    setTimeout(() => {
+      if (welcome) welcome.style.display = 'none';
+      if (cornerMascot) {
+        cornerMascot.style.display = 'block';
+        cornerMascot.classList.add('fade-in');
+      }
+      if (card) {
+        card.style.display = 'flex';
+        card.classList.add('fade-in');
+        
+  // Lift the card out of the click-through overlay to ensure reliable clicks
+        if (card.parentElement === tutorialOverlay) {
+          document.body.appendChild(card);
+  }
+      }
+      
   attachTutorialListeners();
+    }, 800);
+  });
 }
 
 // Ensure minimal overlay exists for highlight/pointer (without tutorial card)
@@ -349,6 +477,302 @@ function injectTutorialCSS() {
       }
     }
     
+    /* Splash Screen */
+    .tutorial-splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #7C3AED;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000001;
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    .splash-logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .splash-logo {
+      max-width: 300px;
+      max-height: 300px;
+      width: auto;
+      height: auto;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(8px 8px 0px rgba(0, 0, 0, 0.3));
+      animation: logoPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    @keyframes logoPop {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .tutorial-splash.fade-out {
+      animation: fadeOut 0.5s ease-out forwards;
+    }
+    
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+    
+    /* Welcome Screen */
+    .tutorial-welcome {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000001;
+      gap: 40px;
+      pointer-events: all;
+    }
+    
+    .tutorial-welcome.fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    .welcome-mascot-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .welcome-mascot-container.move-to-corner {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      transform: translate(0, 0);
+    }
+    
+    .welcome-speech-bubble {
+      background: #000;
+      border: 4px solid #10B981;
+      padding: 20px 30px;
+      margin-bottom: 30px;
+      max-width: 500px;
+      box-shadow: 6px 6px 0px rgba(16, 185, 129, 0.3);
+      position: relative;
+      animation: bubblePopIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    @keyframes bubblePopIn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      50% { 
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .welcome-speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 20px solid #10B981;
+    }
+    
+    .welcome-speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-top: 16px solid #000;
+    }
+    
+    .welcome-speech-bubble .speech-text {
+      font-size: 12px;
+      color: #10B981;
+      font-family: 'Press Start 2P', monospace;
+      line-height: 1.8;
+      text-align: center;
+      text-shadow: 2px 2px 0px #000;
+    }
+    
+    .welcome-mascot {
+      width: 200px;
+      height: auto;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
+      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .welcome-mascot.shrink-to-corner {
+      width: 80px;
+      transform: translate(0, 0);
+    }
+    
+    .welcome-next-btn {
+      padding: 16px 40px;
+      border: 4px solid #10B981;
+      background: #000;
+      color: #10B981;
+      font-size: 12px;
+      font-family: 'Press Start 2P', monospace;
+      cursor: pointer;
+      text-shadow: 2px 2px 0px #000;
+      box-shadow: 6px 6px 0px rgba(16, 185, 129, 0.3);
+      transition: all 0.1s;
+      letter-spacing: 1px;
+      pointer-events: all;
+      z-index: 1000003;
+      position: relative;
+    }
+    
+    .welcome-next-btn:hover {
+      background: #10B981;
+      color: #000;
+      transform: translate(3px, 3px);
+      box-shadow: 3px 3px 0px rgba(16, 185, 129, 0.3);
+    }
+    
+    .welcome-next-btn:active {
+      transform: translate(6px, 6px);
+      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.3);
+    }
+    
+    /* Corner Mascot */
+    .corner-mascot {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000002;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .corner-mascot.fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    .corner-mascot-img {
+      width: 100px;
+      height: auto;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
+      animation: mascotFloat 3s ease-in-out infinite;
+    }
+    
+    .corner-speech-bubble {
+      position: absolute;
+      bottom: 140px;
+      left: 0;
+      background: #000;
+      border: 4px solid #10B981;
+      padding: 14px 18px;
+      max-width: 300px;
+      min-width: 220px;
+      box-shadow: 6px 6px 0px rgba(16, 185, 129, 0.3);
+      z-index: 1000003;
+      animation: bubblePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .corner-speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 30px;
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 20px solid #10B981;
+    }
+    
+    .corner-speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -16px;
+      left: 32px;
+      width: 0;
+      height: 0;
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-top: 16px solid #000;
+    }
+    
+    .corner-speech-text {
+      font-size: 13px;
+      color: #10B981;
+      font-family: 'Press Start 2P', monospace;
+      line-height: 1.6;
+      text-align: left;
+      text-shadow: 2px 2px 0px #000;
+      word-wrap: break-word;
+    }
+    
+    @keyframes mascotFloat {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .tutorial-overlay-content.fade-in {
+      animation: slideInRight 0.5s ease-out;
+    }
+    
     @keyframes bounce {
       0%, 100% { transform: translateY(0) scale(1); }
       50% { transform: translateY(-8px) scale(1.05); }
@@ -379,49 +803,52 @@ function injectTutorialCSS() {
     }
     
     .tutorial-counter {
-      font-size: 10px;
+      font-size: 12px;
       color: #10B981;
       font-weight: normal;
       text-align: center;
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-      text-shadow: 2px 2px 0px #000, 4px 4px 0px rgba(16, 185, 129, 0.3);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      text-shadow: 3px 3px 0px #000, 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
     }
     
     .tutorial-body {
-      padding: 16px;
+      padding: 20px;
       overflow-y: auto;
       flex: 1;
       background: #000;
     }
     
     .tutorial-body h3 {
-      margin: 0 0 12px 0;
-      font-size: 11px;
+      margin: 0 0 16px 0;
+      font-size: 16px;
       color: #10B981;
       font-weight: normal;
-      line-height: 1.6;
-      text-shadow: 2px 2px 0px #000;
+      line-height: 1.8;
+      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.2);
+      letter-spacing: 0.5px;
     }
     
     .tutorial-body p {
-      margin: 0 0 12px 0;
-      font-size: 9px;
-      line-height: 1.8;
+      margin: 0 0 16px 0;
+      font-size: 13px;
+      line-height: 2;
       color: #7C3AED;
-      text-shadow: 1px 1px 0px #000;
+      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.3);
+      letter-spacing: 0.3px;
     }
     
     .info-box {
-      margin: 12px 0;
-      padding: 12px;
+      margin: 16px 0;
+      padding: 16px;
       background: #0a0a0a;
       border: 3px solid #7C3AED;
-      font-size: 8px;
+      font-size: 11px;
       color: #7C3AED;
-      line-height: 1.6;
+      line-height: 1.8;
       display: none;
-      text-shadow: 1px 1px 0px #000;
+      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.3);
+      letter-spacing: 0.3px;
     }
     
     #step-info-box.show-info {
@@ -439,125 +866,148 @@ function injectTutorialCSS() {
     .step-actions button {
       display: block;
       width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border: 3px solid #10B981;
+      padding: 14px;
+      margin: 8px 0;
+      border: 4px solid #10B981;
       background: #000;
       color: #10B981;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: normal;
       cursor: pointer;
-      transition: all 0.1s;
+      transition: all 0.15s;
       text-align: center;
       font-family: 'Press Start 2P', monospace;
-      text-shadow: 2px 2px 0px #000;
-      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.3);
+      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
+      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+      letter-spacing: 0.5px;
     }
     
     .step-actions button:hover {
       background: #10B981;
       color: #000;
       transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.3);
+      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
     }
     
     .step-actions button:active {
       transform: translate(4px, 4px);
-      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.3);
+      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.3);
     }
     
     .tutorial-footer {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       margin-top: 0;
-      padding: 12px;
+      padding: 14px;
       background: #000;
       border-top: 4px solid #10B981;
     }
     
     .tut-btn {
       flex: 1;
-      padding: 10px 8px;
-      border: 3px solid #10B981;
+      padding: 12px 10px;
+      border: 4px solid #10B981;
       background: #000;
       color: #10B981;
-      font-size: 8px;
+      font-size: 9px;
       font-weight: normal;
       cursor: pointer;
-      transition: all 0.1s;
+      transition: all 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Press Start 2P', monospace;
-      text-shadow: 2px 2px 0px #000;
-      box-shadow: 3px 3px 0px rgba(16, 185, 129, 0.3);
-      letter-spacing: 0.5px;
+      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
+      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+      letter-spacing: 0.8px;
+      min-height: 40px;
     }
     
     .tut-btn:hover:not(:disabled) {
       background: #10B981;
       color: #000;
       transform: translate(2px, 2px);
-      box-shadow: 1px 1px 0px rgba(16, 185, 129, 0.3);
+      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
     }
     
     .tut-btn:active:not(:disabled) {
-      transform: translate(3px, 3px);
-      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.3);
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.3);
     }
     
     .tut-btn-primary {
       border-color: #10B981;
       color: #10B981;
+      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
+      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
     }
     
     .tut-btn-primary:hover:not(:disabled) {
       background: #10B981;
       color: #000;
+      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
     }
     
     .tut-btn-secondary {
       border-color: #7C3AED;
       color: #7C3AED;
+      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(124, 58, 237, 0.5);
+      box-shadow: 4px 4px 0px rgba(124, 58, 237, 0.4), 0 0 12px rgba(124, 58, 237, 0.2);
     }
     
     .tut-btn-secondary:hover:not(:disabled) {
       background: #7C3AED;
       color: #000;
+      box-shadow: 2px 2px 0px rgba(124, 58, 237, 0.4), 0 0 15px rgba(124, 58, 237, 0.4);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
     }
     
     .tut-btn-secondary:disabled {
-      opacity: 0.3;
+      opacity: 0.4;
       cursor: not-allowed;
       transform: none;
+      box-shadow: 2px 2px 0px rgba(124, 58, 237, 0.2);
     }
     
     .tut-btn-skip {
       border-color: #6B7280;
       color: #6B7280;
+      text-shadow: 3px 3px 0px #000, 0 0 6px rgba(107, 114, 128, 0.4);
+      box-shadow: 4px 4px 0px rgba(107, 114, 128, 0.3), 0 0 10px rgba(107, 114, 128, 0.15);
     }
     
     .tut-btn-skip:hover {
       background: #6B7280;
       color: #000;
+      box-shadow: 2px 2px 0px rgba(107, 114, 128, 0.3), 0 0 12px rgba(107, 114, 128, 0.3);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
     }
     
     .tut-btn-hint {
       border-color: #FBBF24;
       color: #FBBF24;
+      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(251, 191, 36, 0.6);
+      box-shadow: 4px 4px 0px rgba(251, 191, 36, 0.4), 0 0 12px rgba(251, 191, 36, 0.25);
     }
     
     .tut-btn-hint:hover:not(:disabled) {
       background: #FBBF24;
       color: #000;
+      box-shadow: 2px 2px 0px rgba(251, 191, 36, 0.4), 0 0 15px rgba(251, 191, 36, 0.5);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
     }
     
     .tut-btn-hint:disabled,
     .tut-btn-hint.hint-used {
-      opacity: 0.3;
+      opacity: 0.4;
       cursor: not-allowed;
       border-color: #6B7280;
       color: #6B7280;
+      box-shadow: 2px 2px 0px rgba(107, 114, 128, 0.2);
+      text-shadow: 2px 2px 0px #000;
     }
     
     .tut-btn-hint:disabled:hover,
@@ -565,6 +1015,7 @@ function injectTutorialCSS() {
       transform: none;
       background: #000;
       color: #6B7280;
+      box-shadow: 2px 2px 0px rgba(107, 114, 128, 0.2);
     }
     
     .tutorial-progress-bar {
@@ -955,6 +1406,13 @@ async function showStep(stepIndex) {
   document.getElementById('total-steps').textContent = tutorialData.length;
   document.getElementById('step-title').textContent = (step.title || `STEP ${stepIndex + 1}`).toUpperCase();
   document.getElementById('step-description').textContent = step.description || '';
+  
+  // Update speech bubble with step instructions
+  const speechText = document.getElementById('corner-speech-text');
+  if (speechText) {
+    const instructionText = step.description || step.title || `STEP ${stepIndex + 1}`;
+    speechText.textContent = instructionText.toUpperCase();
+  }
   
   // Display info box
   const infoBox = document.getElementById('step-info-box');
@@ -2844,6 +3302,12 @@ function closeTutorial() {
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startTutorial') {
+    console.log('[Scratch AI] Received startTutorial message', {
+      hostname: location.hostname,
+      pathname: location.pathname,
+      url: location.href
+    });
+    
     // Store tutorial metadata for progress tracking
     if (request.mainLessonTitle !== undefined) {
       tutorialMetadata.mainLessonTitle = request.mainLessonTitle;
@@ -2852,28 +3316,120 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       tutorialMetadata.miniLessonIndex = request.miniLessonIndex;
     }
     
-    // If we're in the editor iframe or the top editor page, run directly; otherwise forward
-    if (location.hostname === 'projects.scratch.mit.edu' || isScratchEditor()) {
+    // Check if we're in a Scratch editor context - more robust detection
+    // If we're on any scratch.mit.edu domain, just inject - be very lenient
+    const isScratchDomain = location.hostname.includes('scratch.mit.edu');
+    const isEditor = location.hostname === 'projects.scratch.mit.edu' || 
+                     isScratchDomain ||
+                     isScratchEditor();
+    
+    console.log('[Scratch AI] Editor detection:', {
+      isEditor,
+      isScratchDomain,
+      hostname: location.hostname,
+      pathname: location.pathname,
+      isScratchEditor: isScratchEditor()
+    });
+    
+    // If we're on scratch domain, always try to inject (be very permissive)
+    if (isScratchDomain) {
+      console.log('[Scratch AI] On Scratch domain, starting tutorial');
+      injectTutorialCSS();
+      startTutorial(request.tutorialData);
+      sendResponse({ success: true, reason: 'scratch_domain' });
+      return true;
+    } else if (isEditor) {
+      console.log('[Scratch AI] Starting tutorial directly');
       injectTutorialCSS();
       startTutorial(request.tutorialData);
       sendResponse({ success: true });
+      return true;
     } else {
+      // Try to find editor iframe
       try {
         const iframes = Array.from(document.querySelectorAll('iframe'));
-        const editorFrame = iframes.find(f => {
+        let editorFrame = iframes.find(f => {
           const src = f.getAttribute('src') || '';
-          return src.includes('projects.scratch.mit.edu');
+          return src.includes('projects.scratch.mit.edu') || src.includes('scratch.mit.edu');
+        });
+        
+        // If no iframe found, wait a bit and try again (editor might be loading)
+        if (!editorFrame) {
+          console.log('[Scratch AI] No iframe found, retrying...');
+          setTimeout(() => {
+            const retryFrames = Array.from(document.querySelectorAll('iframe'));
+            editorFrame = retryFrames.find(f => {
+              const src = f.getAttribute('src') || '';
+              return src.includes('projects.scratch.mit.edu') || src.includes('scratch.mit.edu');
         });
         if (editorFrame && editorFrame.contentWindow) {
+              try {
+                console.log('[Scratch AI] Found iframe on retry, forwarding via postMessage');
           editorFrame.contentWindow.postMessage({ type: 'scratch_ai_start_tutorial', tutorialData: request.tutorialData }, '*');
           sendResponse({ success: true, forwarded: true });
+              } catch (e) {
+                console.log('[Scratch AI] postMessage failed, injecting directly', e);
+                // If postMessage fails, try injecting directly
+                injectTutorialCSS();
+                startTutorial(request.tutorialData);
+                sendResponse({ success: true, injected: true });
+              }
+            } else {
+              // Last resort: try injecting anyway if we're on scratch domain
+              console.log('[Scratch AI] No iframe found on retry, injecting directly if on scratch domain');
+              if (location.hostname.includes('scratch.mit.edu')) {
+                injectTutorialCSS();
+                startTutorial(request.tutorialData);
+                sendResponse({ success: true, injected: true });
         } else {
           sendResponse({ success: false, reason: 'no_editor_iframe' });
         }
+            }
+          }, 500);
+          return true; // Keep channel open for async response
+        } else if (editorFrame && editorFrame.contentWindow) {
+          try {
+            console.log('[Scratch AI] Found iframe, forwarding via postMessage');
+            editorFrame.contentWindow.postMessage({ type: 'scratch_ai_start_tutorial', tutorialData: request.tutorialData }, '*');
+            sendResponse({ success: true, forwarded: true });
+            return true;
       } catch (e) {
+            console.log('[Scratch AI] postMessage failed, injecting directly', e);
+            // If postMessage fails, try injecting directly
+            injectTutorialCSS();
+            startTutorial(request.tutorialData);
+            sendResponse({ success: true, injected: true });
+            return true;
+          }
+        } else {
+          // If on scratch domain but no iframe, try injecting anyway
+          console.log('[Scratch AI] No iframe contentWindow, injecting directly if on scratch domain');
+          if (location.hostname.includes('scratch.mit.edu')) {
+            injectTutorialCSS();
+            startTutorial(request.tutorialData);
+            sendResponse({ success: true, injected: true });
+            return true;
+          } else {
+            sendResponse({ success: false, reason: 'no_editor_iframe' });
+            return true;
+          }
+        }
+      } catch (e) {
+        console.error('[Scratch AI] Error in iframe detection:', e);
+        // On error, if we're on scratch domain, try injecting anyway
+        if (location.hostname.includes('scratch.mit.edu')) {
+          console.log('[Scratch AI] Error occurred but on scratch domain, injecting anyway');
+          injectTutorialCSS();
+          startTutorial(request.tutorialData);
+          sendResponse({ success: true, injected: true });
+          return true;
+        } else {
         sendResponse({ success: false, reason: 'forward_error', error: String(e) });
+          return true;
       }
     }
+    }
+    return true; // Keep channel open
   } else if (request.action === 'getContext') {
     const context = {
       url: window.location.href,
@@ -3097,14 +3653,24 @@ injectTutorialCSS();
 
 // Detect Scratch editor in top frame (scratch.mit.edu /projects/{id}/editor)
 function isScratchEditor() {
-  const onScratch = location.hostname.endsWith('scratch.mit.edu');
+  // Check hostname - both scratch.mit.edu and projects.scratch.mit.edu
+  const onScratch = location.hostname.endsWith('scratch.mit.edu') || 
+                    location.hostname === 'projects.scratch.mit.edu' ||
+                    location.hostname.includes('scratch.mit.edu');
   if (!onScratch) return false;
+  
   const path = location.pathname;
+  // Check for editor path patterns
   if (/\/projects\/[^\/]+\/editor\/?$/.test(path)) return true;
-  // Heuristic DOM checks
-  const hasStage = document.querySelector('.stage, [class*="stage-"], .stage-wrapper, canvas[class*="stage"]');
-  const hasBlockly = document.querySelector('.blocklyWorkspace, .blocklyFlyout');
-  return !!(hasStage || hasBlockly);
+  if (/\/projects\/[^\/]+/.test(path)) return true; // Any project page
+  if (path.includes('/editor')) return true;
+  
+  // Heuristic DOM checks - more comprehensive
+  const hasStage = document.querySelector('.stage, [class*="stage-"], .stage-wrapper, canvas[class*="stage"], [aria-label*="Stage"], [aria-label*="stage"]');
+  const hasBlockly = document.querySelector('.blocklyWorkspace, .blocklyFlyout, .blocklyToolboxDiv, .scratchCategoryMenuItem, .blocklyBlockCanvas');
+  const hasCodeArea = document.querySelector('.gui, .blocks, .code');
+  
+  return !!(hasStage || hasBlockly || hasCodeArea);
 }
 
 // Wait until toolbox/flyout is available

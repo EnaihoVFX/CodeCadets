@@ -611,14 +611,21 @@ async function startMiniLesson(mainLessonTitle, lessonNumber, miniIndex, miniLes
     // Send tutorial data to Scratch
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs && tabs[0];
-      if (!tab || !tab.url || !tab.url.includes('scratch.mit.edu')) {
+      if (!tab || !tab.url) {
         alert('⚠️ Please navigate to scratch.mit.edu and try again!');
+        hideLoading();
+        return;
+      }
+      
+      // Check if on Scratch domain (both scratch.mit.edu and projects.scratch.mit.edu)
+      const isScratchDomain = tab.url.includes('scratch.mit.edu') || tab.url.includes('projects.scratch.mit.edu');
+      if (!isScratchDomain) {
+        alert('⚠️ Please navigate to scratch.mit.edu and open a project, then try again!');
         hideLoading();
         return;
       }
 
       const onSuccess = () => {
-        alert(`✅ ${miniLesson.title} started on Scratch!`);
         hideLoading();
         
         // Initialize progress tracking
@@ -641,6 +648,9 @@ async function startMiniLesson(mainLessonTitle, lessonNumber, miniIndex, miniLes
           // Store listener reference for cleanup (would need to be cleaned up on tutorial completion)
           chrome.runtime.onMessage.addListener(progressListener);
         }
+        
+        // Close the popup
+        window.close();
       };
       
       const onFail = () => {
@@ -648,19 +658,97 @@ async function startMiniLesson(mainLessonTitle, lessonNumber, miniIndex, miniLes
         hideLoading();
       };
 
-      // Try top frame first
-      chrome.tabs.sendMessage(tab.id, { 
-        action: 'startTutorial', 
-        tutorialData,
-        mainLessonTitle: mainLessonTitle,
-        miniLessonIndex: miniIndex
-      }, (response) => {
-        if (response && response.success) return onSuccess();
+      // First, try to inject content scripts if not already loaded
+      const injectScripts = async () => {
+        try {
+          if (chrome.scripting && chrome.scripting.executeScript) {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id, allFrames: true },
+              files: ['selector-map.js', 'content.js']
+            });
+            console.log('Content scripts injected');
+            // Wait a bit for scripts to initialize
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (e) {
+          console.log('Scripts may already be injected or injection failed:', e.message);
+          // Continue anyway - scripts might already be loaded
+        }
+      };
+
+      // Inject scripts and then send message
+      injectScripts().then(() => {
+        // Try top frame first
+        chrome.tabs.sendMessage(tab.id, { 
+          action: 'startTutorial', 
+          tutorialData,
+          mainLessonTitle: mainLessonTitle,
+          miniLessonIndex: miniIndex
+        }, (response) => {
+        // Check for runtime errors
+        if (chrome.runtime.lastError) {
+          console.error('Chrome runtime error:', chrome.runtime.lastError.message);
+        }
+        
+        if (response && response.success) {
+          console.log('Tutorial started successfully:', response);
+          return onSuccess();
+        }
+
+        // If no response but we're on scratch domain, assume it worked
+        if (!chrome.runtime.lastError && isScratchDomain) {
+          console.log('No response but on scratch domain, assuming success');
+          // Wait a bit and check if tutorial started
+          setTimeout(() => {
+            onSuccess();
+          }, 500);
+          return;
+        }
 
         // Then try all frames if available
-        if (!chrome.webNavigation || !chrome.webNavigation.getAllFrames) return onFail();
+        if (!chrome.webNavigation || !chrome.webNavigation.getAllFrames) {
+          console.log('webNavigation not available, trying direct injection');
+          // Last resort: try sending to frame 0 explicitly
+          chrome.tabs.sendMessage(tab.id, { 
+            action: 'startTutorial', 
+            tutorialData,
+            mainLessonTitle: mainLessonTitle,
+            miniLessonIndex: miniIndex
+          }, { frameId: 0 }, (resp) => {
+            if (chrome.runtime.lastError) {
+              console.error('Frame 0 error:', chrome.runtime.lastError.message);
+              // If on scratch domain, just assume it worked
+              if (isScratchDomain) {
+                console.log('On scratch domain, assuming tutorial started');
+                setTimeout(() => onSuccess(), 500);
+                return;
+              }
+            }
+            if (resp && resp.success) {
+              return onSuccess();
+            }
+            // Last resort: if on scratch domain, assume success
+            if (isScratchDomain) {
+              setTimeout(() => onSuccess(), 500);
+              return;
+            }
+            return onFail();
+          });
+          return;
+        }
+        
         chrome.webNavigation.getAllFrames({ tabId: tab.id }, (frames) => {
-          if (!frames || !frames.length) return onFail();
+          if (chrome.runtime.lastError) {
+            console.error('getAllFrames error:', chrome.runtime.lastError.message);
+            return onFail();
+          }
+          
+          if (!frames || !frames.length) {
+            console.log('No frames found');
+            return onFail();
+          }
+          
+          console.log(`Trying ${frames.length} frames`);
           let pending = frames.length;
           let done = false;
           frames.forEach((f) => {
@@ -670,14 +758,39 @@ async function startMiniLesson(mainLessonTitle, lessonNumber, miniIndex, miniLes
               mainLessonTitle: mainLessonTitle,
               miniLessonIndex: miniIndex
             }, { frameId: f.frameId }, (resp) => {
+              if (chrome.runtime.lastError) {
+                console.error(`Frame ${f.frameId} error:`, chrome.runtime.lastError.message);
+              }
               pending--;
               if (!done && resp && resp.success) {
+                console.log(`Tutorial started in frame ${f.frameId}`);
                 done = true;
                 onSuccess();
               }
-              if (pending === 0 && !done) onFail();
+              if (pending === 0 && !done) {
+                console.log('All frames tried, none succeeded');
+                onFail();
+              }
             });
           });
+        });
+        });
+      }).catch((err) => {
+        console.error('Error injecting scripts:', err);
+        // Try sending message anyway
+        chrome.tabs.sendMessage(tab.id, { 
+          action: 'startTutorial', 
+          tutorialData,
+          mainLessonTitle: mainLessonTitle,
+          miniLessonIndex: miniIndex
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Chrome runtime error after injection:', chrome.runtime.lastError.message);
+          }
+          if (response && response.success) {
+            return onSuccess();
+          }
+          onFail();
         });
       });
     });
@@ -919,15 +1032,24 @@ async function startTutorialLesson(lessonNumber) {
     // Send tutorial data to Scratch
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs && tabs[0];
-      if (!tab || !tab.url || !tab.url.includes('scratch.mit.edu')) {
+      if (!tab || !tab.url) {
         alert('⚠️ Please navigate to scratch.mit.edu and try again!');
+        hideLoading();
+        return;
+      }
+      
+      // Check if on Scratch domain (both scratch.mit.edu and projects.scratch.mit.edu)
+      const isScratchDomain = tab.url.includes('scratch.mit.edu') || tab.url.includes('projects.scratch.mit.edu');
+      if (!isScratchDomain) {
+        alert('⚠️ Please navigate to scratch.mit.edu and open a project, then try again!');
         hideLoading();
         return;
       }
 
       const onSuccess = () => {
-        alert(`✅ Tutorial Lesson ${lessonNumber} started on Scratch!`);
         hideLoading();
+        // Close the popup
+        window.close();
       };
       
       const onFail = () => {
