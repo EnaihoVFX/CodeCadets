@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scratch AI Learning Assistant</title>
+  <title>Cadet Help</title>
+  <link rel="icon" type="image/png" href="icons/logo/iconlogo.png">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
 * {
@@ -117,97 +118,90 @@ body {
 .top-buttons {
   display: flex;
   flex-direction: row;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 30px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .intro-btn {
   flex: 1;
-  padding: 20px;
-  background: #10B981;
-  color: #000;
-  border: 4px solid #10B981;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #052012;
+  border: 0;
   font-size: 14px;
   font-weight: normal;
   font-family: 'Press Start 2P', monospace;
   cursor: pointer;
-  transition: all 0.1s;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
   text-transform: uppercase;
   position: relative;
-  letter-spacing: 3px;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 6px 6px 0 0 #7C3AED;
-  animation: buttonPulse 2s ease-in-out infinite;
+  letter-spacing: 2px;
+  border-radius: 16px;
+  box-shadow: 0 8px 0 #047857, 0 14px 26px rgba(13, 148, 136, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 72px;
 }
 
 .achievements-btn {
-  width: 70px;
-  height: 70px;
-  padding: 0;
-  background: #7C3AED;
-  color: #000;
-  border: 4px solid #7C3AED;
-  font-size: 32px;
-  font-weight: normal;
-  font-family: 'Press Start 2P', monospace;
+  width: 72px;
+  height: 72px;
+  padding: 12px;
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+  border: 0;
+  border-radius: 18px;
   cursor: pointer;
-  transition: all 0.1s;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.6), 6px 6px 0 0 #10B981;
-  animation: buttonPulse 2s ease-in-out infinite;
+  box-shadow: 0 8px 0 #4C1D95, 0 14px 26px rgba(124, 58, 237, 0.45);
+}
+
+.achievements-btn-icon {
+  width: 36px;
+  height: 36px;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.3));
 }
 
 .achievements-btn:hover {
-  background: #8B5CF6;
-  border-color: #8B5CF6;
-  box-shadow: 0 0 40px rgba(139, 92, 246, 0.8), 0 0 60px rgba(16, 185, 129, 0.4), 6px 6px 0 0 #10B981;
-  animation: none;
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #8B5CF6 0%, #5B21B6 100%);
+  box-shadow: 0 10px 0 #4C1D95, 0 18px 32px rgba(124, 58, 237, 0.55);
 }
 
 .achievements-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.8);
+  transform: translateY(0);
+  box-shadow: 0 4px 0 #4C1D95, 0 10px 18px rgba(76, 29, 149, 0.4);
 }
 
-@keyframes buttonPulse {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 6px 6px 0 0 #7C3AED;
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.8), 0 0 40px rgba(124, 58, 237, 0.4), 6px 6px 0 0 #7C3AED;
-  }
+.intro-btn-icon {
+  width: 28px;
+  height: 28px;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.2));
+  flex-shrink: 0;
 }
 
-.intro-btn::before {
-  content: '🎮';
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 20px;
-  animation: gamepadFloat 1.5s ease-in-out infinite;
+.intro-btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
-
-@keyframes gamepadFloat {
-  0%, 100% { transform: translateY(-50%) rotate(-5deg); }
-  50% { transform: translateY(-60%) rotate(5deg); }
-}
-
-
 
 .intro-btn:hover {
-  background: #7C3AED;
-  border-color: #7C3AED;
-  color: #10B981;
-  box-shadow: 0 0 40px rgba(124, 58, 237, 0.8), 0 0 60px rgba(16, 185, 129, 0.4), 6px 6px 0 0 #10B981;
-  animation: none;
+  background: linear-gradient(135deg, #34D399 0%, #059669 100%);
+  box-shadow: 0 10px 0 #047857, 0 20px 34px rgba(13, 148, 136, 0.5);
+  transform: translateY(-2px);
 }
 
 .intro-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+  transform: translateY(0);
+  box-shadow: 0 4px 0 #047857, 0 12px 22px rgba(13, 148, 136, 0.45);
 }
 
 .lessons-grid {
@@ -398,6 +392,16 @@ body {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heading-icon {
+  width: 28px;
+  height: 28px;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.2));
 }
 
 .achievements-stats {
@@ -452,6 +456,9 @@ body {
   cursor: pointer;
   transition: all 0.1s;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .back-btn:hover {
@@ -462,6 +469,13 @@ body {
 
 .back-btn:active {
   transform: translate(2px, 2px);
+}
+
+.back-btn-icon {
+  width: 16px;
+  height: 16px;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.3));
 }
 
 .achievements-list {
@@ -505,12 +519,15 @@ body {
 }
 
 .achievement-card::after {
-  content: '✨';
+  content: '';
   position: absolute;
   top: -10px;
   right: -10px;
-  font-size: 40px;
-  opacity: 0.1;
+  width: 60px;
+  height: 60px;
+  background: url('iconpack/Png/stars.png') no-repeat center;
+  background-size: contain;
+  opacity: 0.15;
   animation: sparkleRotate 3s linear infinite;
 }
 
@@ -665,12 +682,15 @@ body {
 }
 
 .no-achievements::before {
-  content: '⭐';
+  content: '';
   position: absolute;
   top: -30px;
   left: -30px;
-  font-size: 150px;
-  opacity: 0.05;
+  width: 200px;
+  height: 200px;
+  background: url('iconpack/Png/stars.png') no-repeat center;
+  background-size: contain;
+  opacity: 0.08;
   animation: starRotate 20s linear infinite;
 }
 
@@ -890,22 +910,23 @@ body {
 }
 
 .mini-lesson-box.completed::after {
-  content: '✓';
+  content: '';
   position: absolute;
   top: -8px;
   right: -8px;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   background: #10B981;
   border: 3px solid #000;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
-  font-size: 16px;
-  font-weight: bold;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background-image: url('iconpack/Png/check_mark.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px 18px;
 }
 
 /* Current/active lesson */
@@ -936,14 +957,17 @@ body {
 }
 
 .mini-lesson-box.locked::before {
-  content: '🔒';
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 24px;
+  width: 26px;
+  height: 26px;
   z-index: 3;
   filter: grayscale(1);
+  background: url('iconpack/Png/lock.png') no-repeat center;
+  background-size: contain;
 }
 
 .mini-lesson-box.locked .mini-lesson-icon,
@@ -1102,13 +1126,18 @@ body {
 <body>
   <div class="container">
     <header class="header">
-      <img id="logo-img" alt="Scratch Helper Logo" class="logo">
+      <img id="logo-img" alt="Cadet Help Logo" class="logo">
     </header>
 
     <main class="main-content">
       <div class="top-buttons">
-        <button class="intro-btn btn-primary" id="intro-btn">► GAME MAKER</button>
-        <button class="achievements-btn" id="achievements-btn" title="Achievements">🏆</button>
+        <button class="intro-btn btn-primary" id="intro-btn">
+          <img src="iconpack/Png/arrow_1.png" alt="" class="intro-btn-icon" aria-hidden="true">
+          <span class="intro-btn-label">Game Maker</span>
+        </button>
+        <button class="achievements-btn" id="achievements-btn" title="Achievements" aria-label="Achievements">
+          <img src="iconpack/Png/golden_cup.png" alt="" class="achievements-btn-icon" aria-hidden="true">
+        </button>
       </div>
       
       <div class="lessons-grid" id="lessons-grid">
@@ -1118,8 +1147,14 @@ body {
       <!-- Achievements View (hidden by default) -->
       <div class="achievements-view" id="achievements-view" style="display: none;">
         <div class="achievements-header">
-          <h2>🏆 Your Achievements</h2>
-          <button class="back-btn" id="back-btn">← Back</button>
+          <h2>
+            <img src="iconpack/Png/golden_cup.png" alt="" class="heading-icon" aria-hidden="true">
+            <span>Your Achievements</span>
+          </h2>
+          <button class="back-btn" id="back-btn">
+            <img src="iconpack/Png/arrow_4.png" alt="" class="back-btn-icon" aria-hidden="true">
+            <span>Back</span>
+          </button>
         </div>
         <div class="achievements-list" id="achievements-list">
           <!-- Achievements will be loaded here -->
@@ -1129,7 +1164,10 @@ body {
       <!-- Mini Lessons View (hidden by default) -->
       <div class="mini-lessons-view" id="mini-lessons-view" style="display: none;">
         <div class="mini-lessons-header">
-          <button class="back-btn" id="mini-lessons-back-btn">← Back</button>
+          <button class="back-btn" id="mini-lessons-back-btn">
+            <img src="iconpack/Png/arrow_4.png" alt="" class="back-btn-icon" aria-hidden="true">
+            <span>Back</span>
+          </button>
           <h2 id="mini-lessons-title">Mini Lessons</h2>
         </div>
         <div class="progress-section">
