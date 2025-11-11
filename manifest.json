@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Scratch AI Learning Assistant",
+  "name": "Cadet Help",
   "version": "1.0.0",
-  "description": "AI-powered Chrome extension to teach and guide you through learning Scratch programming",
+  "description": "Simple Scratch companion for Code Cadets training",
   "permissions": [
     "storage",
     "activeTab",
@@ -19,7 +19,12 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Scratch AI Assistant"
+    "default_title": "Cadet Help",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
