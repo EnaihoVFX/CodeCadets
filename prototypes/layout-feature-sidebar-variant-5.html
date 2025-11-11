@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Layout · Feature Sidebar · Variant 5</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #111111;
+    }
+    .shell {
+      width: 640px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+    header, footer {
+      background: #f2f2f2;
+      padding: 12px;
+      border: 1px solid #dddddd;
+      border-radius: 12px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr;
+      gap: 12px;
+    }
+    .feature {
+      display: grid;
+      gap: 12px;
+    }
+    .feature .hero {
+      background: #ebebeb;
+      border: 1px solid #cccccc;
+      border-radius: 12px;
+      height: 160px;
+      padding: 12px;
+    }
+    .feature .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .feature .grid .tile {
+      background: #f1f1f1;
+      border: 1px solid #cccccc;
+      border-radius: 10px;
+      height: 80px;
+      padding: 10px;
+    }
+    .sidebar {
+      background: #f9f9f9;
+      border: 1px solid #dcdcdc;
+      border-radius: 12px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .sidebar .slot {
+      background: #ececec;
+      border: 1px solid #cccccc;
+      border-radius: 10px;
+      height: 90px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>Header</header>
+    <div class="layout">
+      <div class="feature">
+        <div class="hero">Hero area</div>
+        <div class="grid">
+          <div class="tile">Info tile 1</div>
+          <div class="tile">Info tile 2</div>
+          <div class="tile">Info tile 3</div>
+          <div class="tile">Info tile 4</div>
+        </div>
+      </div>
+      <div class="sidebar">
+        <div class="slot">Sidebar block 1</div>
+        <div class="slot">Sidebar block 2</div>
+      </div>
+    </div>
+    <footer>Footer</footer>
+  </div>
+</body>
+</html>
+

@@ -1,1175 +1,297 @@
-// API configuration - Hardcoded API key for Scratch AI Assistant
-const API_KEY = 'AIzaSyDcmb4l04vlgxKatscOHH9nMXXFMMK9wMY';
-
-// DOM elements
-const introBtn = document.getElementById('intro-btn');
-const achievementsBtn = document.getElementById('achievements-btn');
-const backBtn = document.getElementById('back-btn');
-const lessonsGrid = document.getElementById('lessons-grid');
-const achievementsView = document.getElementById('achievements-view');
-const achievementsList = document.getElementById('achievements-list');
-const loading = document.getElementById('loading');
-const logoImg = document.getElementById('logo-img');
-const miniLessonsView = document.getElementById('mini-lessons-view');
-const miniLessonsGrid = document.getElementById('mini-lessons-grid');
-const miniLessonsBackBtn = document.getElementById('mini-lessons-back-btn');
-const miniLessonsTitle = document.getElementById('mini-lessons-title');
-const progressPercentage = document.getElementById('progress-percentage');
-const progressBarFill = document.getElementById('progress-bar-fill');
-
-// Set logo image
-if (logoImg && chrome.runtime) {
-  logoImg.src = chrome.runtime.getURL('logo.png');
-}
-
-// Mini lessons data for each main lesson/game
-// Each mini lesson builds upon the previous one to create a cumulative project
-const miniLessonsData = {
-  "Tutorial Lesson 1": [
-    { 
-      title: "Project Setup & Motion", 
-      icon: "🚀", 
-      stepRange: [1, 8],
-      description: "Start your interactive game project! Set up the sprite and add movement controls using Motion blocks.",
-      categories: ["Motion", "Events"],
-      projectPart: "Create the main character sprite and add arrow key movement controls",
-      buildsOn: null
-    },
-    { 
-      title: "Visual Effects & Animation", 
-      icon: "🎨", 
-      stepRange: [9, 15],
-      description: "Add visual flair! Use Looks blocks to create animations, costume changes, and visual feedback.",
-      categories: ["Looks", "Control"],
-      projectPart: "Add sprite animations, costume changes when moving, and visual effects",
-      buildsOn: "Project Setup & Motion"
-    },
-    { 
-      title: "Sound & Music System", 
-      icon: "🔊", 
-      stepRange: [16, 22],
-      description: "Bring your project to life! Add background music, sound effects for actions, and audio feedback.",
-      categories: ["Sound", "Events"],
-      projectPart: "Add background music, movement sounds, and action sound effects",
-      buildsOn: "Visual Effects & Animation"
-    },
-    { 
-      title: "Interactive Events", 
-      icon: "⚡", 
-      stepRange: [23, 28],
-      description: "Make it interactive! Add click events, key presses, and broadcast messages for sprite communication.",
-      categories: ["Events", "Control"],
-      projectPart: "Add click interactions, power-up collection, and sprite communication",
-      buildsOn: "Sound & Music System"
-    },
-    { 
-      title: "Game Logic & Control", 
-      icon: "🔄", 
-      stepRange: [29, 36],
-      description: "Add game mechanics! Use Control blocks for game loops, conditions, and game state management.",
-      categories: ["Control", "Operators"],
-      projectPart: "Create game loop, add win/lose conditions, and implement game states",
-      buildsOn: "Interactive Events"
-    },
-    { 
-      title: "Collision & Detection", 
-      icon: "👁️", 
-      stepRange: [37, 44],
-      description: "Detect interactions! Use Sensing blocks for collisions, boundaries, and user input detection.",
-      categories: ["Sensing", "Control"],
-      projectPart: "Add collision detection with obstacles, boundary checking, and item collection",
-      buildsOn: "Game Logic & Control"
-    },
-    { 
-      title: "Scoring & Calculations", 
-      icon: "➕", 
-      stepRange: [45, 52],
-      description: "Add scoring! Use Operators for score calculations, random numbers, and game mechanics.",
-      categories: ["Operators", "Variables"],
-      projectPart: "Calculate scores, add random elements, and create dynamic game values",
-      buildsOn: "Collision & Detection"
-    },
-    { 
-      title: "Score System & Data", 
-      icon: "📊", 
-      stepRange: [53, 60],
-      description: "Track progress! Create Variables for score, lives, level, and game statistics.",
-      categories: ["Variables", "Control"],
-      projectPart: "Create score variable, lives system, level tracking, and display game stats",
-      buildsOn: "Scoring & Calculations"
-    },
-    { 
-      title: "Polish & Complete", 
-      icon: "🎮", 
-      stepRange: [61, 70],
-      description: "Finish your game! Add final touches, multiple levels, game over screen, and victory conditions.",
-      categories: ["All Categories"],
-      projectPart: "Add game over screen, victory screen, level progression, and final polish",
-      buildsOn: "Score System & Data"
+const layoutStyle = `
+  body {
+    margin: 0;
+    padding: 16px;
+    font-family: Arial, sans-serif;
+    background: #ffffff;
+    color: #111111;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  *, *::before, *::after {
+    box-sizing: inherit;
+  }
+  .shell {
+    width: 620px;
+    min-height: 400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+  }
+  .div1 {
+    grid-area: 1 / 1 / 5 / 8;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    text-rendering: optimizeLegibility;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    border-image-slice: 8 8 8 8;
+    border-image-width: 24px 24px 24px 24px;
+    border-image-outset: 0px 0px 0px 0px;
+    border-image-repeat: repeat repeat;
+    border-image-source: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAeUExURQAAAKen41AwAPjoiKBwEOCwOPjQULi4wPj4+P////pO7MUAAAACdFJOUwAAdpPNOAAAAAFiS0dECfHZpewAAAAHdElNRQfoBwoEASm3/g7KAAAAVElEQVQY02NgYGBSAgMFAUYGBiVlE2cQNFJiZGAKDUuFwFBFPBzltPRyMChLCwJxOsAAxFEJDYdwSkOdUDkoyuioB+FQIj3HoKQa4gqCQcAAQQ4qAA3mZMcXkMg9AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI0LTA3LTEwVDA0OjAxOjIyKzAwOjAwZ2SiBgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNC0wNy0xMFQwNDowMToyMiswMDowMBY5GroAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjQtMDctMTBUMDQ6MDE6NDErMDA6MDC2qyh/AAAAAElFTkSuQmCC");
+    border-style: solid;
+  }
+  .div2 {
+    grid-area: 1 / 8 / 2 / 10;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .div3 {
+    grid-area: 1 / 10 / 2 / 11;
+    padding: 5px 10px 10px 10px;
+  }
+  .div4 {
+    grid-area: 2 / 8 / 4 / 11;
+    padding: 10px 90px 10px 10px;
+    background: transparent;
+    border-image-slice: 9 9 9 9;
+    border-image-width: 30px 30px 30px 30px;
+    border-image-outset: 10px 10px 10px 10px;
+    border-image-repeat: stretch stretch;
+    border-image-source: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAhUExURQAAAKen40hAUGh4eDhISMjY2JioqLC4sNjQ2Pj4+P///6FWOm0AAAACdFJOUwAAdpPNOAAAAAFiS0dECmjQ9FYAAAAHdElNRQfoBwoEASm3/g7KAAAAg0lEQVQY02NgUFJSEmBgYARSggxMxiZGQIaSsrOxIoNyaFhIKBC4poYaMSiHJaekAYGbWSqI4+JiDAQuLkCOSrJ7BxiUmDkBZTxmgkELUEbJBcZxUWJgCrOAcJrDFGnJQbEUxTloDkXyAshzIJ9CPAf0NsinYG8jBYgCgyAojIAARAEACixi6htDmhMAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDctMTBUMDQ6MDE6MjIrMDA6MDBnZKIGAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA3LTEwVDA0OjAxOjIyKzAwOjAwFjkaugAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNy0xMFQwNDowMTo0MSswMDowMLarKH8AAAAASUVORK5CYII=");
+    border-style: solid;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: right;
+    z-index: 10;
+    position: relative;
+    overflow: hidden;
+  }
+  .div4 .title {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    display: block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    line-height: 1.2;
+    text-rendering: geometricPrecision;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+    word-spacing: 6px;
+    transition: filter 0.3s ease;
+  }
+  .div4 .title .maker {
+    display: inline-block;
+    font-size: 18px;
+    letter-spacing: 3px;
+    word-spacing: 6px;
+    color: #d8d8d8;
+    transition: color 0.3s ease;
+  }
+  .achievement-btn {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: none;
+    background: #e5e7eb;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #1f2937;
+    image-rendering: pixelated;
+    cursor: pointer;
+    position: relative;
+  }
+  .achievement-btn img {
+    width: 20px;
+    height: 20px;
+    image-rendering: pixelated;
+  }
+  .achievement-btn::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: -6px;
+    height: 6px;
+    background: #9ca3af;
+    image-rendering: pixelated;
+  }
+  .div4:hover .title {
+    transform: translateY(-50%);
+    filter: brightness(1.1);
+  }
+  .div4:hover .title .maker {
+    color: #cfcfcf;
+  }
+  .robot {
+    position: absolute;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    width: 100px;
+    height: 100px;
+    bottom: 5px;
+    left: 8px;
+    z-index: 3;
+    animation: robot-walk 4s steps(8) infinite;
+  }
+  @keyframes robot-walk {
+    0% {
+      transform: translateX(0) scaleX(1);
     }
-  ],
-  "Tutorial Lesson 2": [
-    { 
-      title: "Advanced Motion", 
-      icon: "🌊", 
-      stepRange: null,
-      description: "Advanced movement: smooth animations, physics simulation, and complex sprite behaviors.",
-      categories: ["Motion", "Operators"]
-    },
-    { 
-      title: "Advanced Control", 
-      icon: "🧠", 
-      stepRange: null,
-      description: "Complex logic: nested loops, multiple conditions, custom blocks, and program organization.",
-      categories: ["Control", "Operators"]
-    },
-    { 
-      title: "Game Mechanics", 
-      icon: "🎯", 
-      stepRange: null,
-      description: "Build game systems: scoring, lives, levels, win/lose conditions, and game state management.",
-      categories: ["Variables", "Control", "Sensing"]
-    },
-    { 
-      title: "Multi-Sprite Projects", 
-      icon: "👥", 
-      stepRange: null,
-      description: "Work with multiple sprites: sprite communication, cloning, sprite interactions, and scene management.",
-      categories: ["Events", "Control", "Sensing"]
-    },
-    { 
-      title: "Final Project", 
-      icon: "🏆", 
-      stepRange: null,
-      description: "Create a complete interactive project using all Scratch categories: a polished game or animation.",
-      categories: ["All Categories"]
+    45% {
+      transform: translateX(calc(100% - 176px)) scaleX(1);
     }
-  ],
-  "Platform Game": [
-    { title: "Create Player", icon: "👤", stepRange: null },
-    { title: "Add Gravity", icon: "⬇️", stepRange: null },
-    { title: "Build Platforms", icon: "🟦", stepRange: null },
-    { title: "Jump Controls", icon: "⬆️", stepRange: null },
-    { title: "Add Enemies", icon: "👾", stepRange: null },
-    { title: "Scoring System", icon: "🏆", stepRange: null }
-  ],
-  "Catch Game": [
-    { title: "Create Basket", icon: "🧺", stepRange: null },
-    { title: "Falling Objects", icon: "🍎", stepRange: null },
-    { title: "Catch Detection", icon: "✨", stepRange: null },
-    { title: "Score & Lives", icon: "❤️", stepRange: null }
-  ],
-  "Race Game": [
-    { title: "Race Car Setup", icon: "🏎️", stepRange: null },
-    { title: "Track Design", icon: "🛣️", stepRange: null },
-    { title: "Movement Controls", icon: "🎮", stepRange: null },
-    { title: "Finish Line", icon: "🏁", stepRange: null }
-  ],
-  "Pong Game": [
-    { title: "Create Paddles", icon: "🏓", stepRange: null },
-    { title: "Ball Physics", icon: "⚪", stepRange: null },
-    { title: "Bounce Detection", icon: "↔️", stepRange: null },
-    { title: "Score Tracking", icon: "📊", stepRange: null }
-  ],
-  "Snake Game": [
-    { title: "Snake Sprite", icon: "🐍", stepRange: null },
-    { title: "Food Generation", icon: "🍎", stepRange: null },
-    { title: "Growth & Movement", icon: "📏", stepRange: null },
-    { title: "Collision Detection", icon: "💥", stepRange: null }
-  ],
-  "Maze Game": [
-    { title: "Maze Design", icon: "🧩", stepRange: null },
-    { title: "Player Movement", icon: "👤", stepRange: null },
-    { title: "Wall Collisions", icon: "🧱", stepRange: null },
-    { title: "Exit & Win", icon: "🚪", stepRange: null }
-  ],
-  "Quiz Game": [
-    { title: "Question Setup", icon: "❓", stepRange: null },
-    { title: "Answer Options", icon: "🔘", stepRange: null },
-    { title: "Score System", icon: "⭐", stepRange: null },
-    { title: "Results Screen", icon: "📊", stepRange: null }
-  ],
-  "Adventure Game": [
-    { title: "Character Setup", icon: "🧙", stepRange: null },
-    { title: "Multiple Scenes", icon: "🌍", stepRange: null },
-    { title: "Inventory System", icon: "🎒", stepRange: null },
-    { title: "Quest Objectives", icon: "📜", stepRange: null }
-  ],
-  "Puzzle Game": [
-    { title: "Puzzle Pieces", icon: "🧩", stepRange: null },
-    { title: "Drag & Drop", icon: "🖱️", stepRange: null },
-    { title: "Match Detection", icon: "✅", stepRange: null },
-    { title: "Level Progression", icon: "📈", stepRange: null }
-  ],
-  "Shooter Game": [
-    { title: "Player Ship", icon: "🚀", stepRange: null },
-    { title: "Enemy Spawning", icon: "👾", stepRange: null },
-    { title: "Shooting Mechanics", icon: "💥", stepRange: null },
-    { title: "Power-ups", icon: "⭐", stepRange: null }
-  ]
-};
+    45.01% {
+      transform: translateX(calc(100% - 176px)) scaleX(-1);
+    }
+    90% {
+      transform: translateX(0) scaleX(-1);
+    }
+    90.01% {
+      transform: translateX(0) scaleX(1);
+    }
+    100% {
+      transform: translateX(0) scaleX(1);
+    }
+  }
+  .gear {
+    position: absolute;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .gear-1 {
+    width: 80px;
+    height: 80px;
+    top: -47px;
+    left: -40px;
+    opacity: 0.85;
+  }
+  @keyframes rotate-clockwise-pixel {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .div4::before {
+    content: '';
+    position: absolute;
+    inset: 5px 5px 5px 5px;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: -1;
+  }
+  .div5 {
+    grid-area: 4 / 8 / 5 / 11;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+  .div6 {
+    grid-area: 5 / 1 / 7 / 11;
+    padding: 16px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    letter-spacing: 0.3px;
+    text-rendering: optimizeLegibility;
+  }
+  .pixel-borders {
+    position: relative;
+    background: #e5e7eb;
+  }
+  .pixel-borders::before,
+  .pixel-borders::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+  .pixel-borders::before {
+    inset: 0;
+    border-style: solid;
+    border-width: 4px;
+    border-color: #1f2937;
+    clip-path: polygon(
+      0 8px, 0 100%, 8px 100%, 8px 8px,
+      calc(100% - 8px) 8px, calc(100% - 8px) calc(100% - 8px),
+      8px calc(100% - 8px), 8px 100%, 100% 100%, 100% 0,
+      0 0
+    );
+  }
+  .pixel-borders::after {
+    inset: 4px;
+    border-style: solid;
+    border-width: 4px;
+    border-color: #9ca3af;
+    clip-path: polygon(
+      0 6px, 0 100%, 6px 100%, 6px 6px,
+      calc(100% - 6px) 6px, calc(100% - 6px) calc(100% - 6px),
+      6px calc(100% - 6px), 6px 100%, 100% 100%, 100% 0,
+      0 0
+    );
+  }
+  .pixel-borders > * {
+    position: relative;
+    z-index: 1;
+  }
+`;
 
-// Tutorial lessons (shown first)
-const tutorialLessons = [
-  { title: "Tutorial Lesson 1", icon: "📚", type: "tutorial", lessonNumber: 1 },
-  { title: "Tutorial Lesson 2", icon: "📖", type: "tutorial", lessonNumber: 2 }
-];
-
-// Games (shown after tutorials)
-const games = [
-  { title: "Platform Game", icon: "🕹️", type: "game" },
-  { title: "Catch Game", icon: "🎯", type: "game" },
-  { title: "Race Game", icon: "🏎️", type: "game" },
-  { title: "Pong Game", icon: "🏓", type: "game" },
-  { title: "Snake Game", icon: "🐍", type: "game" },
-  { title: "Maze Game", icon: "🧩", type: "game" },
-  { title: "Quiz Game", icon: "❓", type: "game" },
-  { title: "Adventure Game", icon: "🗺️", type: "game" },
-  { title: "Puzzle Game", icon: "🧩", type: "game" },
-  { title: "Shooter Game", icon: "🎮", type: "game" }
-];
-
-function generateLessons() {
-  lessonsGrid.innerHTML = '';
-  let itemIndex = 0;
-  
-  // First, add tutorial lessons
-  tutorialLessons.forEach((tutorial) => {
-    const lessonBox = document.createElement('div');
-    lessonBox.className = 'lesson-box';
-    
-    lessonBox.innerHTML = `
-      <div class="lesson-content">
-        <div class="lesson-icon">${tutorial.icon}</div>
-        <div class="lesson-number">Tutorial ${tutorial.lessonNumber}</div>
-        <div class="lesson-title">${tutorial.title}</div>
+const layoutMarkup = `
+  <div class="shell">
+    <div class="div1">Large highlight</div>
+    <div class="div2">
+      <button class="achievement-btn">
+        <img src="iconpack/Png/golden_cup.png" alt="Trophy icon">
+        <span>Stats</span>
+      </button>
       </div>
-    `;
-    lessonBox.addEventListener('click', () => showMiniLessons(tutorial.title, tutorial.lessonNumber));
-    lessonsGrid.appendChild(lessonBox);
-    itemIndex++;
-  });
-  
-  // Then, add games (shuffled for variety)
-  const shuffledGames = [...games].sort(() => Math.random() - 0.5);
-  shuffledGames.forEach((game) => {
-    const lessonBox = document.createElement('div');
-    lessonBox.className = 'lesson-box';
-    
-    lessonBox.innerHTML = `
-      <div class="lesson-content">
-        <div class="lesson-icon">${game.icon}</div>
-        <div class="lesson-number">Game</div>
-        <div class="lesson-title">${game.title}</div>
+    <div class="div3">
+      <img class="icon" src="icons/logo/icon.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
       </div>
-    `;
-    lessonBox.addEventListener('click', () => showMiniLessons(game.title, null));
-    lessonsGrid.appendChild(lessonBox);
-    itemIndex++;
-  });
-}
-
-// Initialize lessons on load
-generateLessons();
-
-// Load achievements on page load
-loadAchievements();
-
-// Achievement button handler
-achievementsBtn.addEventListener('click', () => {
-  showAchievements();
-});
-
-// Back button handler
-backBtn.addEventListener('click', () => {
-  showLessons();
-});
-
-// Mini lessons back button handler
-if (miniLessonsBackBtn) {
-  miniLessonsBackBtn.addEventListener('click', () => {
-    showLessons();
-  });
-}
-
-function showAchievements() {
-  lessonsGrid.style.display = 'none';
-  achievementsView.style.display = 'block';
-  loadAchievements();
-}
-
-function showLessons() {
-  achievementsView.style.display = 'none';
-  miniLessonsView.style.display = 'none';
-  lessonsGrid.style.display = 'grid';
-}
-
-// Show mini lessons for a main lesson/game
-async function showMiniLessons(mainLessonTitle, lessonNumber) {
-  // Hide main grid and show mini lessons view
-  lessonsGrid.style.display = 'none';
-  achievementsView.style.display = 'none';
-  miniLessonsView.style.display = 'block';
-  
-  // Set title
-  if (miniLessonsTitle) {
-    miniLessonsTitle.textContent = mainLessonTitle;
-  }
-  
-  // Get mini lessons for this main lesson
-  const miniLessons = miniLessonsData[mainLessonTitle] || [];
-  
-  // Get completion status
-  const completionKey = `completion_${mainLessonTitle.replace(/\s+/g, '_')}`;
-  const completionData = await getCompletionData(completionKey);
-  
-  // Clear and populate mini lessons grid
-  if (miniLessonsGrid) {
-    miniLessonsGrid.innerHTML = '';
-    
-    // Determine which lessons are completed, current, or locked
-    let firstIncompleteIndex = -1;
-    miniLessons.forEach((_, index) => {
-      const miniLessonKey = `${completionKey}_${index}`;
-      if (!completionData[miniLessonKey] && firstIncompleteIndex === -1) {
-        firstIncompleteIndex = index;
-      }
-    });
-    
-    miniLessons.forEach(async (miniLesson, index) => {
-      const miniLessonKey = `${completionKey}_${index}`;
-      const isCompleted = completionData[miniLessonKey] || false;
-      const isCurrent = index === firstIncompleteIndex;
-      const isLocked = firstIncompleteIndex !== -1 && index > firstIncompleteIndex;
-      
-      // Get progress for this mini-lesson
-      const progress = await getStepProgress(mainLessonTitle, index);
-      
-      // Get total steps from tutorial data if available
-      let totalSteps = progress.totalSteps;
-      if (totalSteps === 0 && lessonNumber !== null) {
-        const lessonData = COMPREHENSIVE_TUTORIAL_DATA["Tutorial Lesson 1"];
-        if (lessonData && lessonData[miniLesson.title]) {
-          totalSteps = lessonData[miniLesson.title].length;
-        }
-      }
-      
-      const progressPercent = totalSteps > 0 
-        ? (progress.completedSteps / totalSteps) * 100 
-        : 0;
-      
-      const miniLessonBox = document.createElement('div');
-      let boxClasses = 'mini-lesson-box';
-      if (isCompleted) {
-        boxClasses += ' completed';
-      } else if (isCurrent) {
-        boxClasses += ' current';
-      } else if (isLocked) {
-        boxClasses += ' locked';
-      }
-      miniLessonBox.className = boxClasses;
-      
-      // Calculate circumference for circular progress
-      // Box is 100px total, border is 5px
-      // To center on the border edge: radius = (100 - 5) / 2 = 47.5
-      // To be slightly inside: radius = (100 - 10) / 2 = 45
-      // Using 47.5 to align with border edge
-      const radius = 47.5;
-      const circumference = 2 * Math.PI * radius;
-      const offset = circumference - (progressPercent / 100) * circumference;
-      
-      miniLessonBox.innerHTML = `
-        <svg class="progress-ring" width="100" height="100" viewBox="0 0 100 100">
-          <circle
-            class="progress-ring-circle-bg"
-            stroke="#9CA3AF"
-            stroke-width="6"
-            fill="transparent"
-            r="${radius}"
-            cx="50"
-            cy="50"
-          />
-          <circle
-            class="progress-ring-circle"
-            stroke="${isCompleted ? '#10B981' : isCurrent ? '#FBBF24' : '#7C3AED'}"
-            stroke-width="6"
-            fill="transparent"
-            r="${radius}"
-            cx="50"
-            cy="50"
-            stroke-dasharray="${circumference}"
-            stroke-dashoffset="${offset}"
-            transform="rotate(-90 50 50)"
-            stroke-linecap="round"
-          />
-        </svg>
-        <div class="mini-lesson-icon">${miniLesson.icon}</div>
-        <div class="mini-lesson-number">${index + 1}</div>
-        <div class="mini-lesson-title">${miniLesson.title}</div>
-      `;
-      
-      if (!isLocked) {
-        miniLessonBox.addEventListener('click', () => {
-          startMiniLesson(mainLessonTitle, lessonNumber, index, miniLesson, miniLessonKey);
-        });
-      }
-      
-      miniLessonsGrid.appendChild(miniLessonBox);
-    });
-    
-    // Update path styling based on completion (SVG path removed)
-    const lessonPath = document.getElementById('lesson-path');
-    if (lessonPath) {
-      const completedCount = miniLessons.filter((_, index) => {
-        const miniLessonKey = `${completionKey}_${index}`;
-        return completionData[miniLessonKey];
-      }).length;
-      
-      // Add completed-segment class if all lessons are done
-      if (completedCount === miniLessons.length) {
-        lessonPath.classList.add('completed-segment');
-      } else {
-        lessonPath.classList.remove('completed-segment');
-      }
-    }
-  }
-  
-  // Update progress
-  updateProgress(mainLessonTitle, completionData);
-}
-
-// Create curved SVG path connecting lessons
-function createCurvedPath(numLessons) {
-  const lessonPath = document.getElementById('lesson-path');
-  if (!lessonPath || numLessons < 2) return;
-  
-  // Remove existing SVG if any
-  const existingSvg = lessonPath.querySelector('.lesson-path-svg');
-  if (existingSvg) {
-    existingSvg.remove();
-  }
-  
-  // Get the actual height of the lessons grid
-  const miniLessonsGrid = document.getElementById('mini-lessons-grid');
-  if (!miniLessonsGrid) return;
-  
-  // Wait a moment for layout to settle
-  setTimeout(() => {
-    const gridHeight = miniLessonsGrid.offsetHeight;
-    const gridTop = miniLessonsGrid.offsetTop;
-    
-    // Create SVG element
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'lesson-path-svg');
-    svg.style.position = 'absolute';
-    svg.style.top = `${gridTop}px`;
-    svg.style.left = '50%';
-    svg.style.transform = 'translateX(-50%)';
-    svg.style.width = '200px';
-    svg.style.height = `${gridHeight}px`;
-    svg.setAttribute('viewBox', `0 0 200 ${gridHeight}`);
-    svg.setAttribute('preserveAspectRatio', 'none');
-    
-    // Calculate positions for curved path
-    const centerX = 100; // Center of the path
-    const lessonSpacing = gridHeight / (numLessons - 1);
-    const curveAmount = 35; // How much to curve left/right
-    
-    // Create path with curves
-    let pathData = '';
-    const startY = 50;
-    
-    for (let i = 0; i < numLessons - 1; i++) {
-      const y1 = startY + (i * lessonSpacing);
-      const y2 = startY + ((i + 1) * lessonSpacing);
-      const midY = (y1 + y2) / 2;
-      
-      // Alternate curve direction for visual interest
-      const curveX = i % 2 === 0 ? centerX + curveAmount : centerX - curveAmount;
-      
-      if (i === 0) {
-        pathData += `M ${centerX} ${y1}`;
-      }
-      
-      // Create smooth curve using quadratic bezier
-      pathData += ` Q ${curveX} ${midY}, ${centerX} ${y2}`;
-    }
-    
-    // Create path element
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('class', 'lesson-path-line');
-    path.setAttribute('d', pathData);
-    path.setAttribute('stroke', '#10B981');
-    path.setAttribute('stroke-width', '6');
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
-    
-    svg.appendChild(path);
-    lessonPath.insertBefore(svg, miniLessonsGrid);
-  }, 50);
-}
-
-// Get completion data from storage
-function getCompletionData(key) {
-  return new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.get([key], (result) => {
-        resolve(result[key] || {});
-      });
-    } else {
-      resolve({});
-    }
-  });
-}
-
-// Save completion data to storage
-function saveCompletionData(key, data) {
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    chrome.storage.local.set({ [key]: data }, () => {
-      console.log('Completion data saved:', key, data);
-    });
-  }
-}
-
-// Update progress bar and percentage
-function updateProgress(mainLessonTitle, completionData) {
-  const miniLessons = miniLessonsData[mainLessonTitle] || [];
-  const completionKey = `completion_${mainLessonTitle.replace(/\s+/g, '_')}`;
-  
-  let completedCount = 0;
-  miniLessons.forEach((_, index) => {
-    const miniLessonKey = `${completionKey}_${index}`;
-    if (completionData[miniLessonKey]) {
-      completedCount++;
-    }
-  });
-  
-  const total = miniLessons.length;
-  const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-  
-  if (progressPercentage) {
-    progressPercentage.textContent = `${percentage}%`;
-  }
-  
-  if (progressBarFill) {
-    progressBarFill.style.width = `${percentage}%`;
-  }
-}
-
-// Start a mini lesson
-async function startMiniLesson(mainLessonTitle, lessonNumber, miniIndex, miniLesson, completionKey) {
-  showLoading();
-  
-  try {
-    let tutorialData = [];
-    
-    // Use pre-defined comprehensive tutorial data
-    if (lessonNumber !== null) {
-      // Get tutorial data from comprehensive tutorial data structure
-      const lessonData = COMPREHENSIVE_TUTORIAL_DATA["Tutorial Lesson 1"];
-      if (lessonData && lessonData[miniLesson.title]) {
-        tutorialData = lessonData[miniLesson.title];
-      } else {
-        // Fallback to basic tutorial if not found
-        alert(`⚠️ Tutorial data not found for "${miniLesson.title}". Using basic tutorial.`);
-        const fullTutorialData = SCRATCH_TUTORIAL_STRUCTURE?.steps || [];
-        tutorialData = fullTutorialData.slice(0, 5);
-      }
-    } else if (lessonNumber !== null) {
-      // For tutorial lessons without specific ranges, split the tutorial
-      const fullTutorialData = SCRATCH_TUTORIAL_STRUCTURE?.steps || [];
-      const totalSteps = fullTutorialData.length;
-      const midPoint = Math.ceil(totalSteps / 2);
-      
-      if (lessonNumber === 1) {
-        tutorialData = fullTutorialData.slice(0, midPoint);
-      } else {
-        tutorialData = fullTutorialData.slice(midPoint);
-      }
-    } else {
-      // For games, generate tutorial using AI
-      const systemInstruction = 'You are a friendly and patient Scratch programming tutor for children and beginners. Explain concepts clearly and simply.';
-      const prompt = `Create a step-by-step tutorial for the "${miniLesson.title}" part of making a "${mainLessonTitle}" in Scratch. Make it beginner-friendly with clear instructions. Break it down into 3-5 steps.`;
-      
-      const gameTutorial = await callGeminiAPI(prompt, systemInstruction);
-      // For now, show in alert. In future, could parse into steps
-      alert(`🎮 ${miniLesson.title} Tutorial:\n\n${gameTutorial}`);
-      hideLoading();
-      
-      // Mark as completed after showing
-      const completionKeyFull = `completion_${mainLessonTitle.replace(/\s+/g, '_')}`;
-      const completionData = await getCompletionData(completionKeyFull);
-      completionData[completionKey] = true;
-      saveCompletionData(completionKeyFull, completionData);
-      
-      // Refresh mini lessons view to update progress
-      showMiniLessons(mainLessonTitle, lessonNumber);
-      return;
-    }
-    
-    // Send tutorial data to Scratch
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
-      if (!tab || !tab.url) {
-        alert('⚠️ Please navigate to scratch.mit.edu and try again!');
-        hideLoading();
-        return;
-      }
-      
-      // Check if on Scratch domain (both scratch.mit.edu and projects.scratch.mit.edu)
-      const isScratchDomain = tab.url.includes('scratch.mit.edu') || tab.url.includes('projects.scratch.mit.edu');
-      if (!isScratchDomain) {
-        alert('⚠️ Please navigate to scratch.mit.edu and open a project, then try again!');
-        hideLoading();
-        return;
-      }
-
-      const onSuccess = () => {
-        hideLoading();
-        
-        // Initialize progress tracking
-        const totalSteps = tutorialData.length;
-        saveStepProgress(mainLessonTitle, miniIndex, 0, totalSteps);
-        
-        // Set up listener for step progress updates
-        if (typeof chrome !== 'undefined' && chrome.runtime) {
-          const progressListener = (message, sender, sendResponse) => {
-            if (message.action === 'stepProgress' && 
-                message.mainLessonTitle === mainLessonTitle && 
-                message.miniLessonIndex === miniIndex) {
-              saveStepProgress(mainLessonTitle, miniIndex, message.stepIndex, message.totalSteps).then(() => {
-                // Refresh mini lessons view to update progress display
-                showMiniLessons(mainLessonTitle, lessonNumber);
-              });
-            }
-          };
-          
-          // Store listener reference for cleanup (would need to be cleaned up on tutorial completion)
-          chrome.runtime.onMessage.addListener(progressListener);
-        }
-        
-        // Close the popup
-        window.close();
-      };
-      
-      const onFail = () => {
-        alert('⚠️ Please open a Scratch project and try again!');
-        hideLoading();
-      };
-
-      // First, try to inject content scripts if not already loaded
-      const injectScripts = async () => {
-        try {
-          if (chrome.scripting && chrome.scripting.executeScript) {
-            await chrome.scripting.executeScript({
-              target: { tabId: tab.id, allFrames: true },
-              files: ['selector-map.js', 'content.js']
-            });
-            console.log('Content scripts injected');
-            // Wait a bit for scripts to initialize
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        } catch (e) {
-          console.log('Scripts may already be injected or injection failed:', e.message);
-          // Continue anyway - scripts might already be loaded
-        }
-      };
-
-      // Inject scripts and then send message
-      injectScripts().then(() => {
-        // Try top frame first
-        chrome.tabs.sendMessage(tab.id, { 
-          action: 'startTutorial', 
-          tutorialData,
-          mainLessonTitle: mainLessonTitle,
-          miniLessonIndex: miniIndex
-        }, (response) => {
-        // Check for runtime errors
-        if (chrome.runtime.lastError) {
-          console.error('Chrome runtime error:', chrome.runtime.lastError.message);
-        }
-        
-        if (response && response.success) {
-          console.log('Tutorial started successfully:', response);
-          return onSuccess();
-        }
-
-        // If no response but we're on scratch domain, assume it worked
-        if (!chrome.runtime.lastError && isScratchDomain) {
-          console.log('No response but on scratch domain, assuming success');
-          // Wait a bit and check if tutorial started
-          setTimeout(() => {
-            onSuccess();
-          }, 500);
-          return;
-        }
-
-        // Then try all frames if available
-        if (!chrome.webNavigation || !chrome.webNavigation.getAllFrames) {
-          console.log('webNavigation not available, trying direct injection');
-          // Last resort: try sending to frame 0 explicitly
-          chrome.tabs.sendMessage(tab.id, { 
-            action: 'startTutorial', 
-            tutorialData,
-            mainLessonTitle: mainLessonTitle,
-            miniLessonIndex: miniIndex
-          }, { frameId: 0 }, (resp) => {
-            if (chrome.runtime.lastError) {
-              console.error('Frame 0 error:', chrome.runtime.lastError.message);
-              // If on scratch domain, just assume it worked
-              if (isScratchDomain) {
-                console.log('On scratch domain, assuming tutorial started');
-                setTimeout(() => onSuccess(), 500);
-                return;
-              }
-            }
-            if (resp && resp.success) {
-              return onSuccess();
-            }
-            // Last resort: if on scratch domain, assume success
-            if (isScratchDomain) {
-              setTimeout(() => onSuccess(), 500);
-              return;
-            }
-            return onFail();
-          });
-          return;
-        }
-        
-        chrome.webNavigation.getAllFrames({ tabId: tab.id }, (frames) => {
-          if (chrome.runtime.lastError) {
-            console.error('getAllFrames error:', chrome.runtime.lastError.message);
-            return onFail();
-          }
-          
-          if (!frames || !frames.length) {
-            console.log('No frames found');
-            return onFail();
-          }
-          
-          console.log(`Trying ${frames.length} frames`);
-          let pending = frames.length;
-          let done = false;
-          frames.forEach((f) => {
-            chrome.tabs.sendMessage(tab.id, { 
-              action: 'startTutorial', 
-              tutorialData,
-              mainLessonTitle: mainLessonTitle,
-              miniLessonIndex: miniIndex
-            }, { frameId: f.frameId }, (resp) => {
-              if (chrome.runtime.lastError) {
-                console.error(`Frame ${f.frameId} error:`, chrome.runtime.lastError.message);
-              }
-              pending--;
-              if (!done && resp && resp.success) {
-                console.log(`Tutorial started in frame ${f.frameId}`);
-                done = true;
-                onSuccess();
-              }
-              if (pending === 0 && !done) {
-                console.log('All frames tried, none succeeded');
-                onFail();
-              }
-            });
-          });
-        });
-        });
-      }).catch((err) => {
-        console.error('Error injecting scripts:', err);
-        // Try sending message anyway
-        chrome.tabs.sendMessage(tab.id, { 
-          action: 'startTutorial', 
-          tutorialData,
-          mainLessonTitle: mainLessonTitle,
-          miniLessonIndex: miniIndex
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('Chrome runtime error after injection:', chrome.runtime.lastError.message);
-          }
-          if (response && response.success) {
-            return onSuccess();
-          }
-          onFail();
-        });
-      });
-    });
-  } catch (error) {
-    alert(`Error: ${error.message}`);
-    hideLoading();
-  }
-}
-
-// Mark mini lesson as complete
-// Save step progress for a mini-lesson
-async function saveStepProgress(mainLessonTitle, miniLessonIndex, stepIndex, totalSteps) {
-  const progressKey = `progress_${mainLessonTitle.replace(/\s+/g, '_')}`;
-  const progressData = await getCompletionData(progressKey);
-  
-  const miniLessonProgressKey = `${progressKey}_${miniLessonIndex}`;
-  if (!progressData[miniLessonProgressKey]) {
-    progressData[miniLessonProgressKey] = { completedSteps: 0, totalSteps: totalSteps };
-  }
-  
-  // Update completed steps (ensure we don't go backwards)
-  const currentProgress = progressData[miniLessonProgressKey];
-  if (stepIndex + 1 > currentProgress.completedSteps) {
-    currentProgress.completedSteps = stepIndex + 1;
-    currentProgress.totalSteps = totalSteps;
-    saveCompletionData(progressKey, progressData);
-  }
-  
-  return progressData[miniLessonProgressKey];
-}
-
-// Get step progress for a mini-lesson
-async function getStepProgress(mainLessonTitle, miniLessonIndex) {
-  const progressKey = `progress_${mainLessonTitle.replace(/\s+/g, '_')}`;
-  const progressData = await getCompletionData(progressKey);
-  const miniLessonProgressKey = `${progressKey}_${miniLessonIndex}`;
-  return progressData[miniLessonProgressKey] || { completedSteps: 0, totalSteps: 0 };
-}
-
-async function markMiniLessonComplete(mainLessonTitle, completionKey, lessonNumber) {
-  const completionKeyFull = `completion_${mainLessonTitle.replace(/\s+/g, '_')}`;
-  const completionData = await getCompletionData(completionKeyFull);
-  completionData[completionKey] = true;
-  saveCompletionData(completionKeyFull, completionData);
-  
-  // Refresh mini lessons view to update UI
-  showMiniLessons(mainLessonTitle, lessonNumber);
-}
-
-function loadAchievements() {
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    chrome.storage.local.get(['achievements'], (result) => {
-      const achievements = result.achievements || {};
-      displayAchievements(achievements);
-    });
-  } else {
-    displayAchievements({});
-  }
-}
-
-function displayAchievements(achievements) {
-  achievementsList.innerHTML = '';
-  
-  const achievementData = {
-    'tutorial_completed': {
-      title: 'Tutorial Master',
-      description: 'You completed the full Scratch tutorial!',
-      icon: '🎓'
-    }
-  };
-  
-  const achievementKeys = Object.keys(achievements);
-  
-  // Calculate statistics
-  const totalAchievements = achievementKeys.length;
-  const totalStars = achievementKeys.reduce((sum, key) => {
-    return sum + (achievements[key].stars || 3);
-  }, 0);
-  
-  // Show statistics
-  const statsHTML = `
-    <div class="achievements-stats">
-      <div class="stat-box">
-        <div class="stat-value">${totalAchievements}</div>
-        <div class="stat-label">Achievements</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value">${totalStars}</div>
-        <div class="stat-label">Total Stars</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value">${totalAchievements > 0 ? Math.round(totalStars / totalAchievements * 10) / 10 : 0}</div>
-        <div class="stat-label">Avg Stars</div>
-      </div>
+    <div class="div4">
+      <img class="gear gear-1" src="icons/gears/gear1.png" alt="Gear 1">
+      <img class="robot" src="icons/robot.png" alt="Robot">
+      <span class="title">GAME <span class="maker">MAKER</span></span>
     </div>
-  `;
-  
-  achievementsList.innerHTML = statsHTML;
-  
-  if (achievementKeys.length === 0) {
-    achievementsList.innerHTML += `
-      <div class="no-achievements">
-        <div class="no-achievements-icon">🏆</div>
-        <div class="no-achievements-title">No Achievements Yet!</div>
-        <div class="no-achievements-text">
-          Complete tutorials to unlock amazing achievements!<br>
-          Each achievement earns you up to 3 stars! ⭐⭐⭐
-        </div>
+    <div class="div5">Getting Started</div>
+    <div class="div6 pixel-borders">Footer</div>
       </div>
     `;
-    return;
-  }
-  
-  achievementKeys.forEach((key, index) => {
-    const achievement = achievements[key];
-    const data = achievementData[key] || {
-      title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      description: 'Great job completing this challenge!',
-      icon: '🎯'
-    };
-    
-    const card = document.createElement('div');
-    card.className = 'achievement-card';
-    card.style.animationDelay = `${index * 0.1}s`;
-    
-    const date = new Date(achievement.date).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-    
-    card.innerHTML = `
-      <div class="achievement-icon">${data.icon}</div>
-      <div class="achievement-title">${data.title}</div>
-      <div class="achievement-description">${data.description}</div>
-      <div class="achievement-stars">
-        ${Array(achievement.stars || 3).fill(0).map((_, i) => 
-          `<div class="achievement-star" style="animation-delay: ${i * 0.3}s">⭐</div>`
-        ).join('')}
-      </div>
-      <div class="achievement-date">🏅 Earned on ${date}</div>
-    `;
-    
-    achievementsList.appendChild(card);
-  });
-}
 
-// Show/hide loading
-function showLoading() {
-  if (loading) loading.style.display = 'flex';
-}
+document.head.replaceChildren();
+const fontLink = document.createElement('link');
+fontLink.rel = 'stylesheet';
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+document.head.appendChild(fontLink);
+const styleEl = document.createElement('style');
+styleEl.textContent = layoutStyle;
+document.head.appendChild(styleEl);
 
-function hideLoading() {
-  if (loading) loading.style.display = 'none';
-}
+document.body.innerHTML = layoutMarkup;
 
-// API call function
-async function callGeminiAPI(prompt, systemInstruction = '') {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
-  
-  const requestBody = {
-    contents: [{
-      parts: [{
-        text: prompt
-      }]
-    }]
-  };
-
-  if (systemInstruction) {
-    requestBody.systemInstruction = {
-      parts: [{
-        text: systemInstruction
-      }]
-    };
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody)
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'API request failed');
-  }
-
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
-}
-
-// Introduction button handler
-introBtn.addEventListener('click', async () => {
-  showLoading();
-  try {
-    const systemInstruction = 'You are a friendly and patient Scratch programming tutor for children and beginners. Explain concepts clearly and simply.';
-    const prompt = `Give a comprehensive but friendly introduction to Scratch programming. Include:
-1. What Scratch is
-2. Why it's great for learning programming
-3. Key concepts: sprites, blocks, scripts, backdrop, etc.
-4. How to get started
-5. What you can create with Scratch
-
-Make it engaging and exciting, as if you're talking to a curious beginner!`;
-    
-    const introduction = await callGeminiAPI(prompt, systemInstruction);
-    
-    // Create a modal or alert with the introduction
-    alert(introduction);
-  } catch (error) {
-    alert(`Error: ${error.message}`);
-  } finally {
-    hideLoading();
-  }
-});
-
-// Start tutorial lesson handler (for Tutorial Lesson 1 and 2)
-async function startTutorialLesson(lessonNumber) {
-  showLoading();
-  try {
-    // Get the full tutorial data
-    let fullTutorialData = SCRATCH_TUTORIAL_STRUCTURE?.steps || [];
-    
-    // Split tutorial into two parts
-    const totalSteps = fullTutorialData.length;
-    const midPoint = Math.ceil(totalSteps / 2);
-    
-    let tutorialData;
-    if (lessonNumber === 1) {
-      // First half of tutorial
-      tutorialData = fullTutorialData.slice(0, midPoint);
-    } else {
-      // Second half of tutorial
-      tutorialData = fullTutorialData.slice(midPoint);
-    }
-    
-    // Send tutorial data to Scratch
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
-      if (!tab || !tab.url) {
-        alert('⚠️ Please navigate to scratch.mit.edu and try again!');
-        hideLoading();
-        return;
-      }
-      
-      // Check if on Scratch domain (both scratch.mit.edu and projects.scratch.mit.edu)
-      const isScratchDomain = tab.url.includes('scratch.mit.edu') || tab.url.includes('projects.scratch.mit.edu');
-      if (!isScratchDomain) {
-        alert('⚠️ Please navigate to scratch.mit.edu and open a project, then try again!');
-        hideLoading();
-        return;
-      }
-
-      const onSuccess = () => {
-        hideLoading();
-        // Close the popup
-        window.close();
-      };
-      
-      const onFail = () => {
-        alert('⚠️ Please open a Scratch project and try again!');
-        hideLoading();
-      };
-
-      // Try top frame first
-      chrome.tabs.sendMessage(tab.id, { 
-        action: 'startTutorial', 
-        tutorialData,
-        mainLessonTitle: mainLessonTitle,
-        miniLessonIndex: miniIndex
-      }, (response) => {
-        if (response && response.success) return onSuccess();
-
-        // Then try all frames if available
-        if (!chrome.webNavigation || !chrome.webNavigation.getAllFrames) return onFail();
-        chrome.webNavigation.getAllFrames({ tabId: tab.id }, (frames) => {
-          if (!frames || !frames.length) return onFail();
-          let pending = frames.length;
-          let done = false;
-          frames.forEach((f) => {
-            chrome.tabs.sendMessage(tab.id, { 
-              action: 'startTutorial', 
-              tutorialData,
-              mainLessonTitle: mainLessonTitle,
-              miniLessonIndex: miniIndex
-            }, { frameId: f.frameId }, (resp) => {
-              pending--;
-              if (!done && resp && resp.success) {
-                done = true;
-                onSuccess();
-              }
-              if (pending === 0 && !done) onFail();
-            });
-          });
-        });
-      });
-    });
-  } catch (error) {
-    alert(`Error: ${error.message}`);
-    hideLoading();
-  }
-}
-
-// Start game handler
-async function startGame(gameTitle) {
-  showLoading();
-  try {
-    // For now, games will use AI to generate tutorial content
-    // In the future, this could load specific game tutorials
-    const systemInstruction = 'You are a friendly and patient Scratch programming tutor for children and beginners. Explain concepts clearly and simply.';
-    const prompt = `Create a step-by-step tutorial for making a "${gameTitle}" in Scratch. Make it beginner-friendly with clear instructions. Break it down into 5-8 steps.`;
-    
-    const gameTutorial = await callGeminiAPI(prompt, systemInstruction);
-    
-    // For now, show the tutorial in an alert
-    // In the future, this could be integrated with the tutorial system
-    alert(`🎮 ${gameTitle} Tutorial:\n\n${gameTutorial}`);
-    hideLoading();
-  } catch (error) {
-    alert(`Error: ${error.message}`);
-    hideLoading();
-  }
-}
-
-// Listen for messages to start next mini lesson
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'startNextMiniLesson') {
-    const { mainLessonTitle, currentMiniLessonIndex } = request;
-    
-    // Get mini lessons for this main lesson
-    const miniLessons = miniLessonsData[mainLessonTitle] || [];
-    const nextIndex = currentMiniLessonIndex + 1;
-    
-    if (nextIndex < miniLessons.length) {
-      const nextMiniLesson = miniLessons[nextIndex];
-      const completionKey = `completion_${mainLessonTitle.replace(/\s+/g, '_')}`;
-      const miniLessonKey = `${completionKey}_${nextIndex}`;
-      
-      // Determine lesson number (for Tutorial Lesson 1 or 2)
-      let lessonNumber = null;
-      if (mainLessonTitle === "Tutorial Lesson 1") {
-        lessonNumber = 1;
-      } else if (mainLessonTitle === "Tutorial Lesson 2") {
-        lessonNumber = 2;
-      }
-      
-      // Start the next mini lesson with splash screen skipped
-      startMiniLesson(mainLessonTitle, lessonNumber, nextIndex, nextMiniLesson, miniLessonKey, true);
-      sendResponse({ success: true });
-    } else {
-      // No more mini lessons, just reopen popup
-      sendResponse({ success: false, reason: 'no_more_lessons' });
-    }
-    return true;
-  }
-  
-  // Check for pending next lesson on popup load
-  if (request.action === 'checkPendingNextLesson') {
-    chrome.storage.local.get(['pendingNextLesson'], (result) => {
-      if (result.pendingNextLesson) {
-        const { mainLessonTitle, currentMiniLessonIndex } = result.pendingNextLesson;
-        chrome.storage.local.remove(['pendingNextLesson']);
-        
-        // Trigger next lesson start
-        chrome.runtime.sendMessage({
-          action: 'startNextMiniLesson',
-          mainLessonTitle,
-          currentMiniLessonIndex
-        });
-      }
-      sendResponse({ success: true });
-    });
-    return true;
-  }
-});
-
-// Check for pending next lesson when popup loads
-if (typeof chrome !== 'undefined' && chrome.runtime) {
-  chrome.runtime.sendMessage({ action: 'checkPendingNextLesson' });
-}

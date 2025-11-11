@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Layout · Feature Sidebar · Variant 1</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #111111;
+    }
+    .shell {
+      width: 640px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+    header, footer {
+      background: #f2f2f2;
+      padding: 12px;
+      border: 1px solid #dddddd;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 12px;
+    }
+    .feature {
+      background: #ebebeb;
+      border: 1px solid #cccccc;
+      height: 210px;
+      padding: 12px;
+    }
+    .sidebar {
+      display: grid;
+      gap: 12px;
+    }
+    .sidebar .slot {
+      background: #f0f0f0;
+      border: 1px solid #cccccc;
+      height: 90px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>Header</header>
+    <div class="layout">
+      <div class="feature">Large highlight</div>
+      <div class="sidebar">
+        <div class="slot">Sidebar tile 1</div>
+        <div class="slot">Sidebar tile 2</div>
+      </div>
+    </div>
+    <footer>Footer</footer>
+  </div>
+</body>
+</html>
+

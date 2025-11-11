@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Layout · Feature Sidebar · Variant 2</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #111111;
+    }
+    .shell {
+      width: 640px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+    header, footer {
+      background: #f2f2f2;
+      padding: 12px;
+      border: 1px solid #dddddd;
+      border-radius: 12px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 12px;
+    }
+    .sidebar {
+      display: grid;
+      gap: 12px;
+    }
+    .sidebar .slot {
+      background: #f0f0f0;
+      border: 1px solid #cccccc;
+      border-radius: 10px;
+      height: 90px;
+      padding: 10px;
+    }
+    .feature {
+      display: grid;
+      gap: 12px;
+    }
+    .feature .hero {
+      background: #e9e9e9;
+      border: 1px solid #cccccc;
+      border-radius: 12px;
+      height: 150px;
+      padding: 12px;
+    }
+    .feature .lower {
+      background: #eeeeee;
+      border: 1px solid #cccccc;
+      border-radius: 12px;
+      height: 100px;
+      padding: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>Header</header>
+    <div class="layout">
+      <div class="sidebar">
+        <div class="slot">Sidebar tile 1</div>
+        <div class="slot">Sidebar tile 2</div>
+        <div class="slot">Sidebar tile 3</div>
+      </div>
+      <div class="feature">
+        <div class="hero">Large hero</div>
+        <div class="lower">Secondary row</div>
+      </div>
+    </div>
+    <footer>Footer</footer>
+  </div>
+</body>
+</html>
+

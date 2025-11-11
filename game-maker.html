@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Maker</title>
+  <link rel="icon" type="image/png" href="icons/logo/iconlogo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    body {
+      width: 420px;
+      min-height: 600px;
+      font-family: 'Press Start 2P', monospace;
+      background: #000;
+      color: #10B981;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      min-height: 600px;
+      max-height: 600px;
+      width: 100%;
+      border: 8px solid #10B981;
+      background: #0a0a0a;
+      box-shadow: 0 0 0 4px #7C3AED, 0 0 40px rgba(16, 185, 129, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(16, 185, 129, 0.1);
+      animation: scanline 4s linear infinite;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @keyframes scanline {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+
+    .main-content {
+      flex: 1;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <main class="main-content" aria-label="Game Maker workspace">
+      <!-- Reserved for future Game Maker interface -->
+    </main>
+  </div>
+</body>
+</html>
+
