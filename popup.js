@@ -3,9 +3,10 @@ const layoutStyle = `
     margin: 0;
     padding: 16px;
     font-family: Arial, sans-serif;
-    background: #ffffff;
+    background: #040716;
     color: #111111;
     box-sizing: border-box;
+  }
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -37,17 +38,15 @@ const layoutStyle = `
     border-image-repeat: repeat repeat;
     border-image-source: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAeUExURQAAAKen41AwAPjoiKBwEOCwOPjQULi4wPj4+P////pO7MUAAAACdFJOUwAAdpPNOAAAAAFiS0dECfHZpewAAAAHdElNRQfoBwoEASm3/g7KAAAAVElEQVQY02NgYGBSAgMFAUYGBiVlE2cQNFJiZGAKDUuFwFBFPBzltPRyMChLCwJxOsAAxFEJDYdwSkOdUDkoyuioB+FQIj3HoKQa4gqCQcAAQQ4qAA3mZMcXkMg9AAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI0LTA3LTEwVDA0OjAxOjIyKzAwOjAwZ2SiBgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNC0wNy0xMFQwNDowMToyMiswMDowMBY5GroAAAAodEVYdGRhdGU6dGltZXN0YW1wADIwMjQtMDctMTBUMDQ6MDE6NDErMDA6MDC2qyh/AAAAAElFTkSuQmCC");
     border-style: solid;
+    background: transparent;
   }
   .div2 {
-    grid-area: 1 / 8 / 2 / 10;
-    padding: 10px;
+    grid-area: 1 / 8 / 2 / 11;
+    padding: 10px 0;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .div3 {
-    grid-area: 1 / 10 / 2 / 11;
-    padding: 5px 10px 10px 10px;
+    position: relative;
   }
   .div4 {
     grid-area: 2 / 8 / 4 / 11;
@@ -99,37 +98,89 @@ const layoutStyle = `
   }
   .achievement-btn {
     width: 100%;
+    max-width: none;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: none;
-    background: #e5e7eb;
+    gap: 10px;
+    padding: 14px 34px;
+    margin-top: -6px;
+    border: 6px solid transparent;
+    border-radius: 0;
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23b35a11' d='M0 0h8v8H0zm1 1v6h6V1H1z'/%3E%3C/svg%3E") 3 stretch;
+    background:
+      linear-gradient(155deg, #f8d763 0%, #eaa739 55%, #b7631d 100%);
+    color: #2a1502;
+    box-shadow:
+      0 10px 0 rgba(84, 36, 4, 0.9),
+      0 16px 26px rgba(41, 17, 2, 0.55);
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #1f2937;
-    image-rendering: pixelated;
+    text-decoration: none;
     cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     position: relative;
+    margin: 0;
   }
   .achievement-btn img {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
+    margin-bottom: 4px;
+    transform: rotate(-10deg);
     image-rendering: pixelated;
   }
-  .achievement-btn::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: -6px;
-    height: 6px;
-    background: #9ca3af;
-    image-rendering: pixelated;
+  .achievement-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 0 rgba(109, 52, 6, 0.75),
+      0 16px 26px rgba(59, 32, 5, 0.5);
+    filter: brightness(1.05);
+  }
+  .achievement-btn:active {
+    transform: translateY(0);
+    box-shadow:
+      0 5px 0 rgba(109, 52, 6, 0.85),
+      0 10px 20px rgba(59, 32, 5, 0.4);
+  }
+  .quick-action-btn {
+    width: 56px;
+    height: 56px;
+    border: 6px solid transparent;
+    border-radius: 10px;
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%2310365d' d='M0 0h8v8H0zm1 1v6h6V1H1z'/%3E%3C/svg%3E") 3 stretch;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(154, 223, 255, 0.85), rgba(43, 149, 219, 0.8)),
+      linear-gradient(160deg, #0f7bd6, #095a9d);
+    box-shadow:
+      0 6px 0 rgba(15, 65, 111, 0.65),
+      0 12px 20px rgba(9, 36, 61, 0.45);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .quick-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 0 rgba(15, 65, 111, 0.75),
+      0 16px 24px rgba(9, 36, 61, 0.5);
+    filter: brightness(1.05);
+  }
+  .quick-action-btn:active {
+    transform: translateY(0);
+    box-shadow:
+      0 4px 0 rgba(15, 65, 111, 0.85),
+      0 10px 18px rgba(9, 36, 61, 0.45);
+  }
+  .quick-action-btn span {
+    color: #071f3b;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .div4:hover .title {
     transform: translateY(-50%);
@@ -206,12 +257,19 @@ const layoutStyle = `
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    line-height: 1.5;
+    letter-spacing: 0.1em;
+    line-height: 1.4;
     text-rendering: optimizeLegibility;
+    border: 6px solid transparent;
+    border-radius: 0;
+    border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23121d46' d='M0 0h8v8H0zm1 1v6h6V1H1z'/%3E%3Cpath fill='%236c8aff' d='M1 1h6v6H1z'/%3E%3C/svg%3E") 3 stretch;
+    background: #060c1cb3;
+    color: #e2eaffeb;
+    box-shadow: 0 14px #060c20c7, inset 0 0 0 2px #94b4ff4d;
   }
   .div6 {
     grid-area: 5 / 1 / 7 / 11;
@@ -267,20 +325,16 @@ const layoutMarkup = `
     <div class="div1">Large highlight</div>
     <div class="div2">
       <button class="achievement-btn">
-        <img src="iconpack/Png/golden_cup.png" alt="Trophy icon">
-        <span>Stats</span>
+        <span>Achievements</span>
       </button>
-      </div>
-    <div class="div3">
-      <img class="icon" src="icons/logo/icon.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
-      </div>
+    </div>
     <div class="div4">
       <img class="gear gear-1" src="icons/gears/gear1.png" alt="Gear 1">
       <img class="robot" src="icons/robot.png" alt="Robot">
       <span class="title">GAME <span class="maker">MAKER</span></span>
     </div>
-    <div class="div5">Getting Started</div>
-    <div class="div6 pixel-borders">Footer</div>
+    <div class="div5 pixel-borders">Getting Started</div>
+    <div class="div6 pixel-borders"></div>
       </div>
     `;
 
