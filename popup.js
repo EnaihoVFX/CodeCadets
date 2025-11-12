@@ -14,18 +14,16 @@ const layoutMarkup = `
       <div class="xp-progress-container">
         <div class="xp-progress-bar">
           <div class="xp-progress-fill" id="xp-progress-fill"></div>
+          <div class="xp-progress-text" id="xp-progress-text">0 / 100</div>
         </div>
-        <div class="xp-progress-text" id="xp-progress-text">0 / 100</div>
       </div>
-      <div class="xp-level">
-        <span class="level-label">LVL</span>
-        <span class="level-value" id="level-value">1</span>
-      </div>
+      <img class="level-icon" src="icons/logo/icon.png" alt="Level">
     </div>
   </div>
 
   <div class="shell">
     <div class="div1">
+      <div class="falling-icons-container"></div>
       <span class="tutorials-text">tutorials</span>
     </div>
     <div class="div2">
@@ -38,13 +36,6 @@ const layoutMarkup = `
       <img class="robot" src="mascot.png" alt="Robot">
       <span class="title">GAME <span class="maker">MAKER</span></span>
     </div>
-    <div class="div5">
-      <div class="getting-started-content">
-        <span class="getting-started-text">Getting Started</span>
-        <div class="getting-started-subtitle">Begin your journey</div>
-      </div>
-    </div>
-    <div class="div6">Content area</div>
   </div>
   
   <!-- Tutorials Page (hidden by default) -->
@@ -92,8 +83,8 @@ const layoutMarkup = `
   <div class="loading" id="loading" style="display: none;">
     <div class="spinner"></div>
     <p>LOADING...</p>
-  </div>
-`;
+      </div>
+    `;
 
 document.head.replaceChildren();
 const fontLink = document.createElement('link');
@@ -146,12 +137,10 @@ function saveXPState() {
 // Update XP bar display
 function updateXPBar() {
   const xpValue = document.getElementById('xp-value');
-  const levelValue = document.getElementById('level-value');
   const progressFill = document.getElementById('xp-progress-fill');
   const progressText = document.getElementById('xp-progress-text');
   
   if (xpValue) xpValue.textContent = xpState.xp;
-  if (levelValue) levelValue.textContent = xpState.level;
   
   const xpInCurrentLevel = xpState.xp % xpState.xpForNextLevel;
   const progressPercent = (xpInCurrentLevel / xpState.xpForNextLevel) * 100;
@@ -177,21 +166,21 @@ function awardXP(amount) {
 
 // Tutorial data - using comprehensive structure from backup
 const tutorialLessons = [
-  { id: 1, title: "Tutorial Lesson 1", icon: "📚", type: "tutorial", lessonNumber: 1 },
-  { id: 2, title: "Tutorial Lesson 2", icon: "📖", type: "tutorial", lessonNumber: 2 }
+  { id: 1, title: "Tutorial Lesson 1", icon: "iconpack/Png/star.png", type: "tutorial", lessonNumber: 1 },
+  { id: 2, title: "Tutorial Lesson 2", icon: "iconpack/Png/compass.png", type: "tutorial", lessonNumber: 2 }
 ];
 
 const games = [
-  { id: 3, title: "Platform Game", icon: "🕹️", type: "game" },
-  { id: 4, title: "Catch Game", icon: "🎯", type: "game" },
-  { id: 5, title: "Race Game", icon: "🏎️", type: "game" },
-  { id: 6, title: "Pong Game", icon: "🏓", type: "game" },
-  { id: 7, title: "Snake Game", icon: "🐍", type: "game" },
-  { id: 8, title: "Maze Game", icon: "🧩", type: "game" },
-  { id: 9, title: "Quiz Game", icon: "❓", type: "game" },
-  { id: 10, title: "Adventure Game", icon: "🗺️", type: "game" },
-  { id: 11, title: "Puzzle Game", icon: "🧩", type: "game" },
-  { id: 12, title: "Shooter Game", icon: "🎮", type: "game" }
+  { id: 3, title: "Platform Game", icon: "iconpack/Png/mountain_top.png", type: "game" },
+  { id: 4, title: "Catch Game", icon: "iconpack/Png/coin.png", type: "game" },
+  { id: 5, title: "Race Game", icon: "iconpack/Png/car.png", type: "game" },
+  { id: 6, title: "Pong Game", icon: "iconpack/Png/balloon.png", type: "game" },
+  { id: 7, title: "Snake Game", icon: "iconpack/Png/skull.png", type: "game" },
+  { id: 8, title: "Maze Game", icon: "iconpack/Png/key.png", type: "game" },
+  { id: 9, title: "Quiz Game", icon: "iconpack/Png/question_help.png", type: "game" },
+  { id: 10, title: "Adventure Game", icon: "iconpack/Png/flag.png", type: "game" },
+  { id: 11, title: "Puzzle Game", icon: "iconpack/Png/chest.png", type: "game" },
+  { id: 12, title: "Shooter Game", icon: "iconpack/Png/fire.png", type: "game" }
 ];
 
 // Mini lessons data for each main lesson/game
@@ -366,10 +355,10 @@ function createTutorialCards() {
     card.dataset.type = tutorial.type;
     card.dataset.lessonNumber = tutorial.lessonNumber || '';
     
+    const iconName = tutorial.icon.split('/').pop().replace('.png', '');
     card.innerHTML = `
-      <div class="tutorial-card-icon">${tutorial.icon}</div>
+      <img class="tutorial-card-icon" data-icon="${iconName}" src="${tutorial.icon}" alt="${tutorial.title}">
       <div class="tutorial-card-title">${tutorial.title}</div>
-      <div class="tutorial-card-description">${tutorial.type === 'tutorial' ? 'Learn Scratch step by step' : 'Build a complete game'}</div>
     `;
     
     grid.appendChild(card);
@@ -383,10 +372,10 @@ function createTutorialCards() {
     card.dataset.title = game.title;
     card.dataset.type = game.type;
     
+    const iconName = game.icon.split('/').pop().replace('.png', '');
     card.innerHTML = `
-      <div class="tutorial-card-icon">${game.icon}</div>
+      <img class="tutorial-card-icon" data-icon="${iconName}" src="${game.icon}" alt="${game.title}">
       <div class="tutorial-card-title">${game.title}</div>
-      <div class="tutorial-card-description">Build a complete game</div>
     `;
     
     grid.appendChild(card);
@@ -1026,12 +1015,130 @@ if (div1) {
   };
 }
 
+// Falling icons for tutorial div
+function createFallingIcons() {
+  const container = document.querySelector('.falling-icons-container');
+  if (!container) return;
+  
+  const icons = [
+    'iconpack/Png/star.png',
+    'iconpack/Png/coin.png',
+    'iconpack/Png/lightning.png',
+    'iconpack/Png/crown.png',
+    'iconpack/Png/medal.png',
+    'iconpack/Png/compass.png',
+    'iconpack/Png/key.png',
+    'iconpack/Png/chest.png',
+    'iconpack/Png/emerald.png',
+    'iconpack/Png/ruby.png',
+    'iconpack/Png/shield.png',
+    'iconpack/Png/victory.png',
+    'iconpack/Png/clock.png',
+    'iconpack/Png/treasure_chest.png',
+    'iconpack/Png/golden_cup.png',
+    'iconpack/Png/heart.png',
+    'iconpack/Png/fire.png',
+    'iconpack/Png/balloon.png',
+    'iconpack/Png/cloud.png',
+    'iconpack/Png/flag.png',
+    'iconpack/Png/envelope.png',
+    'iconpack/Png/bell.png',
+    'iconpack/Png/smartphone.png',
+    'iconpack/Png/display.png',
+    'iconpack/Png/car.png',
+    'iconpack/Png/plane.png',
+    'iconpack/Png/tree.png',
+    'iconpack/Png/skull.png',
+    'iconpack/Png/sunglasses.png',
+    'iconpack/Png/magnet.png',
+    'iconpack/Png/safe.png',
+    'iconpack/Png/kings_hat.png',
+    'iconpack/Png/apple.png',
+    'iconpack/Png/cake.png',
+    'iconpack/Png/pizza.png',
+    'iconpack/Png/burger.png',
+    'iconpack/Png/ice_cream.png',
+    'iconpack/Png/cup.png',
+    'iconpack/Png/tea.png',
+    'iconpack/Png/honey.png',
+    'iconpack/Png/lemonade.png'
+  ];
+  
+  function createIcon() {
+    const icon = document.createElement('img');
+    icon.className = 'falling-icon';
+    icon.src = icons[Math.floor(Math.random() * icons.length)];
+    icon.alt = '';
+    
+    // Get container dimensions for proper calculation
+    const containerHeight = container.offsetHeight || 300;
+    const containerWidth = container.offsetWidth || 200;
+    
+    // Random size variation (small, medium, large)
+    const sizeVariation = Math.random();
+    let size, sizeClass;
+    if (sizeVariation < 0.3) {
+      size = 24 + Math.random() * 8; // Small: 24-32px
+      sizeClass = 'small';
+    } else if (sizeVariation < 0.7) {
+      size = 32 + Math.random() * 8; // Medium: 32-40px
+      sizeClass = 'medium';
+    } else {
+      size = 40 + Math.random() * 12; // Large: 40-52px
+      sizeClass = 'large';
+    }
+    
+    const startX = Math.random() * (containerWidth - size);
+    const duration = 3 + Math.random() * 4; // 3-7 seconds (more variation)
+    
+    // Random horizontal drift
+    const driftAmount = (Math.random() - 0.5) * 40; // -20px to +20px
+    const rotationSpeed = 360 + (Math.random() - 0.5) * 180; // 270-450 degrees
+    
+    icon.style.left = `${startX}px`;
+    icon.style.top = `-${size}px`;
+    icon.style.width = `${size}px`;
+    icon.style.height = `${size}px`;
+    icon.style.animationDuration = `${duration}s`;
+    icon.style.animationDelay = '0s';
+    icon.style.setProperty('--fall-distance', `${containerHeight + size}px`);
+    icon.style.setProperty('--drift-amount', `${driftAmount}px`);
+    icon.style.setProperty('--rotation', `${rotationSpeed}deg`);
+    icon.dataset.size = sizeClass;
+    
+    container.appendChild(icon);
+    
+    // Remove icon after animation completes
+    setTimeout(() => {
+      if (icon.parentNode) {
+        icon.remove();
+      }
+    }, duration * 1000);
+  }
+  
+  // Wait for container to be sized, then create icons
+  setTimeout(() => {
+    // Create initial icons
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => createIcon(), i * 300);
+    }
+    
+    // Continuously create new icons
+    setInterval(() => {
+      if (container.children.length < 8) {
+        createIcon();
+      }
+    }, 1000);
+  }, 200);
+}
+
 // Initialize after DOM is ready
 setTimeout(() => {
   loadXPState();
   updateXPBar();
   createTutorialCards();
   loadAchievements();
+  createFallingIcons();
   
   // Tutorials button click
   const tutorialsBtn = document.querySelector('.tutorials-text');
@@ -1070,31 +1177,6 @@ setTimeout(() => {
     }
   });
   
-  // Getting Started button
-  const gettingStartedBtn = document.querySelector('.getting-started-content');
-  if (gettingStartedBtn) {
-    gettingStartedBtn.addEventListener('click', async () => {
-      showLoading();
-      try {
-        const systemInstruction = 'You are a friendly and patient Scratch programming tutor for children and beginners. Explain concepts clearly and simply.';
-        const prompt = `Give a comprehensive but friendly introduction to Scratch programming. Include:
-1. What Scratch is
-2. Why it's great for learning programming
-3. Key concepts: sprites, blocks, scripts, backdrop, etc.
-4. How to get started
-5. What you can create with Scratch
-
-Make it engaging and exciting, as if you're talking to a curious beginner!`;
-        
-        const introduction = await callGeminiAPI(prompt, systemInstruction);
-        alert(introduction);
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-      } finally {
-        hideLoading();
-      }
-    });
-  }
   
   // Listen for messages to start next mini lesson
   if (typeof chrome !== 'undefined' && chrome.runtime) {
