@@ -47,7 +47,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["selector-map.json", "mascot.png", "logo.png", "vendor/jszip.min.js"],
+      "resources": ["selector-map.json", "mascot.png", "logo.png", "icons/robot.png", "vendor/jszip.min.js"],
       "matches": ["https://scratch.mit.edu/*", "https://projects.scratch.mit.edu/*"]
     }
   ]

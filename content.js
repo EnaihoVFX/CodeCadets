@@ -136,7 +136,7 @@ function createTutorialOverlay() {
   let logoUrl, mascotUrl;
   try {
     logoUrl = chrome.runtime.getURL('logo.png');
-    mascotUrl = chrome.runtime.getURL('mascot.png');
+    mascotUrl = chrome.runtime.getURL('icons/robot.png');
   } catch (e) {
     console.error('Error getting resource URLs:', e);
     logoUrl = '';
