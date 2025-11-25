@@ -37,14 +37,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Handle reopen popup request
   if (request.action === 'reopenPopup' || request.action === 'openPopup') {
+    // Store page to navigate to if specified
+    const storageData = {};
+    if (request.page) {
+      storageData.popupNavigateTo = request.page;
+    }
+    if (request.mainLessonTitle) {
+      storageData.popupMainLessonTitle = request.mainLessonTitle;
+    }
+    if (Object.keys(storageData).length > 0) {
+      chrome.storage.local.set(storageData);
+    }
+    
     // Try to open the popup programmatically
     // Note: This only works in response to user interaction and has strict limitations
     chrome.action.openPopup().then(() => {
       sendResponse({ success: true });
     }).catch((error) => {
       // If openPopup fails, try creating a popup window as fallback
+      const popupUrl = request.page 
+        ? chrome.runtime.getURL(`popup.html?page=${request.page}`)
+        : chrome.runtime.getURL('popup.html');
+      
       chrome.windows.create({
-        url: chrome.runtime.getURL('popup.html'),
+        url: popupUrl,
         type: 'popup',
         width: 420,
         height: 600

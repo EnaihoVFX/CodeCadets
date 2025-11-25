@@ -40,24 +40,6 @@
       overflow: hidden;
     }
 
-    .container::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: rgba(16, 185, 129, 0.1);
-      animation: scanline 4s linear infinite;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    @keyframes scanline {
-      0% { top: 0; }
-      100% { top: 100%; }
-    }
-
     .main-content {
       flex: 1;
       background: #000;

@@ -34,24 +34,6 @@ body {
   position: relative;
 }
 
-.container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(16, 185, 129, 0.1);
-  animation: scanline 4s linear infinite;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-@keyframes scanline {
-  0% { top: 0; }
-  100% { top: 100%; }
-}
-
 .header {
   background: #000;
   color: #10B981;
@@ -77,6 +59,17 @@ body {
   image-rendering: crisp-edges;
   filter: drop-shadow(4px 4px 0px #10B981) drop-shadow(8px 8px 0px rgba(16, 185, 129, 0.3));
   animation: logoBounce 2s ease-in-out infinite;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(4px 4px 0px #10B981) drop-shadow(8px 8px 0px rgba(16, 185, 129, 0.5)) drop-shadow(0 0 15px rgba(16, 185, 129, 0.6));
+}
+
+.logo:active {
+  transform: scale(1.05);
 }
 
 @keyframes logoBounce {
@@ -110,6 +103,7 @@ body {
   display: flex;
   flex-direction: row;
   gap: 16px;
+  margin-top: 20px;
   margin-bottom: 30px;
   align-items: stretch;
 }
@@ -1320,6 +1314,9 @@ body {
 
   <script src="tutorial-data.js"></script>
   <script src="comprehensive-tutorial-data.js"></script>
+  <script src="database-service.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="avatar-utils.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

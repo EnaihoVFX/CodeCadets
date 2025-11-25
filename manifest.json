@@ -15,7 +15,11 @@
     "https://generativelanguage.googleapis.com/*",
     "https://cdnjs.cloudflare.com/*",
     "https://scratch.mit.edu/*",
-    "https://projects.scratch.mit.edu/*"
+    "https://projects.scratch.mit.edu/*",
+    "https://code-cadets.getlearnworlds.com/*",
+    "https://*.getlearnworlds.com/*",
+    "https://*.supabase.co/*",
+    "https://liberatedpixelcup.github.io/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -43,11 +47,20 @@
       "js": ["selector-map.js", "content.js"],
       "all_frames": true,
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://code-cadets.getlearnworlds.com/*",
+        "https://*.getlearnworlds.com/*"
+      ],
+      "js": ["learnworlds-user.js"],
+      "all_frames": false,
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["selector-map.json", "mascot.png", "logo.png", "icons/robot.png", "vendor/jszip.min.js"],
+      "resources": ["selector-map.json", "mascot.png", "logo.png", "icons/robot.png", "icons/logo/icon.png", "profile.html", "profile_v2.html", "profile.js", "profile_v2.js", "database-service.js", "avatar-utils.js", "lpc-integration.js", "character-builder.js", "avatar-customizer.js", "vendor/jszip.min.js", "iconpack/Png/star.png", "assets/lpc/*"],
       "matches": ["https://scratch.mit.edu/*", "https://projects.scratch.mit.edu/*"]
     }
   ]

@@ -29,6 +29,7 @@ npm-debug.log*
 
 # API keys (security)
 config.js
+supabase-config.js
 .env
 *.key
 

@@ -156,7 +156,7 @@ function createTutorialOverlay() {
         <div class="splash-logo-fallback" style="display: none; font-size: 48px; color: #fff; font-family: 'Press Start 2P', monospace;">CODE<br/>CADETS</div>
           </div>
         </div>
-    
+  
     <!-- Welcome Screen with Mascot -->
     <div class="tutorial-welcome" id="tutorial-welcome" style="display: none;">
       <div class="welcome-mascot-container">
@@ -174,11 +174,11 @@ function createTutorialOverlay() {
     <div class="tutorial-overlay-content" id="tutorial-card" style="display: none;">
       <div class="tutorial-header" id="tutorial-drag-handle">
         <div class="tutorial-counter">STEP <span id="step-num">1</span>/<span id="total-steps">?</span></div>
-          <div class="tutorial-progress-bar">
-            <div class="tutorial-progress-fill" id="progress-fill"></div>
-        </div>
       </div>
       <div class="tutorial-body">
+        <div class="step-instruction-header">
+          <span class="instruction-label">WHAT TO DO:</span>
+        </div>
         <h3 id="step-title">LOADING...</h3>
         <p id="step-description"></p>
           <div id="step-info-box" class="info-box">
@@ -260,14 +260,54 @@ function createTutorialOverlay() {
   }
 }
 
-// Gamification state
+// Gamification state - syncs with popup.js xpState
 let gamificationState = {
   xp: 0,
   level: 1,
   streak: 0,
   totalStepsCompleted: 0,
-  hintsUsed: 0
+  hintsUsed: 0,
+  lastActivityDate: null,
+  perfectRuns: 0,
+  totalXP: 0
 };
+
+// Calculate XP required for a specific level (progressive scaling)
+function getXPForLevel(level) {
+  if (level <= 1) return 0;
+  // Progressive formula: base * (level - 1) + scaling factor
+  // Level 1->2: 100 XP, Level 2->3: 150 XP, Level 3->4: 200 XP, etc.
+  const baseXP = 100;
+  const scalingFactor = 50;
+  let totalXP = 0;
+  for (let i = 2; i <= level; i++) {
+    totalXP += baseXP + (i - 2) * scalingFactor;
+  }
+  return totalXP;
+}
+
+// Calculate current level based on total XP
+function calculateLevel(totalXP) {
+  let level = 1;
+  let xpNeeded = 0;
+  while (totalXP >= xpNeeded) {
+    level++;
+    const xpForThisLevel = 100 + (level - 2) * 50;
+    xpNeeded += xpForThisLevel;
+    if (totalXP < xpNeeded) {
+      level--;
+      break;
+    }
+  }
+  return level;
+}
+
+// Get XP needed for next level
+function getXPNeededForNextLevel(currentLevel, currentXP) {
+  const xpForCurrentLevel = getXPForLevel(currentLevel);
+  const xpForNextLevel = getXPForLevel(currentLevel + 1);
+  return xpForNextLevel - xpForCurrentLevel;
+}
 
 // Create gamification bar at top of page
 function createGamificationBar() {
@@ -277,63 +317,159 @@ function createGamificationBar() {
     existingBar.remove();
   }
   
+  // Load Press Start 2P font if not already loaded
+  if (!document.getElementById('press-start-2p-font')) {
+    const fontLink = document.createElement('link');
+    fontLink.id = 'press-start-2p-font';
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap';
+    document.head.appendChild(fontLink);
+  }
+  
   // Load saved state
   loadGamificationState();
+  
+  // Get icon URL
+  let iconUrl = '';
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+      iconUrl = chrome.runtime.getURL('icons/logo/icon.png');
+      // Verify the URL is valid
+      if (!iconUrl || iconUrl.includes('undefined')) {
+        console.warn('Invalid icon URL generated');
+        iconUrl = '';
+      }
+    }
+  } catch (e) {
+    console.error('Error getting icon URL:', e);
+  }
   
   const gamificationBar = document.createElement('div');
   gamificationBar.id = 'gamification-bar';
   gamificationBar.innerHTML = `
     <div class="gamification-content">
-      <div class="gamification-item">
-        <div class="gamification-icon">⭐</div>
-        <div class="gamification-label">XP</div>
-        <div class="gamification-value" id="gamification-xp">${gamificationState.xp}</div>
-      </div>
-      <div class="gamification-item">
-        <div class="gamification-icon">🎯</div>
-        <div class="gamification-label">LEVEL</div>
-        <div class="gamification-value" id="gamification-level">${gamificationState.level}</div>
-      </div>
-      <div class="gamification-item">
-        <div class="gamification-icon">🔥</div>
-        <div class="gamification-label">STREAK</div>
-        <div class="gamification-value" id="gamification-streak">${gamificationState.streak}</div>
-      </div>
-      <div class="gamification-progress">
-        <div class="gamification-progress-label">NEXT LEVEL</div>
+      <button class="gamification-tutorial-btn" id="gamification-tutorial-btn" title="Tutorials">
+        <span class="gamification-tutorial-btn-text">TUTORIALS</span>
+      </button>
+      <div class="gamification-progress-container">
         <div class="gamification-progress-bar">
           <div class="gamification-progress-fill" id="gamification-progress-fill"></div>
+          <div class="gamification-progress-text" id="gamification-progress-text">0 / 100</div>
         </div>
-        <div class="gamification-progress-text" id="gamification-progress-text">0 / 100 XP</div>
       </div>
+      ${iconUrl ? `<img class="gamification-popup-icon" src="${iconUrl}" alt="Open Popup" id="gamification-popup-icon" onerror="this.style.display='none'; console.error('Failed to load icon:', this.src);">` : ''}
     </div>
   `;
   
   document.body.appendChild(gamificationBar);
+  
+  // Use event delegation for gamification bar buttons (works even when recreated)
+  // This listener is attached once and persists
+  if (!window.gamificationDelegationAttached) {
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      
+      // Check if clicked element is the tutorial button or inside it
+      const tutorialBtn = target.closest('#gamification-tutorial-btn') || 
+                         (target.id === 'gamification-tutorial-btn' ? target : null);
+      if (tutorialBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+          chrome.runtime.sendMessage({ action: 'openPopup', page: 'tutorials' });
+        }
+        return;
+      }
+      
+      // Check if clicked element is the achievements button or inside it
+      const achievementsBtn = target.closest('#gamification-achievements-btn') || 
+                             (target.id === 'gamification-achievements-btn' ? target : null);
+      if (achievementsBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        showAchievementsOverlay();
+        return;
+      }
+      
+      // Check if clicked element is the popup icon
+      const iconElement = target.closest('#gamification-popup-icon') || 
+                         (target.id === 'gamification-popup-icon' ? target : null);
+      if (iconElement) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+          chrome.runtime.sendMessage({ action: 'openPopup' });
+        }
+        return;
+      }
+    }, true); // Use capture phase
+    
+    window.gamificationDelegationAttached = true;
+  }
+  
+  // Add error handler for icon (only needs to be attached once per icon element)
+  if (iconUrl) {
+    const iconElement = document.getElementById('gamification-popup-icon');
+    if (iconElement && !iconElement._errorHandlerAttached) {
+      iconElement.addEventListener('error', () => {
+        console.error('Icon failed to load. URL:', iconUrl);
+        console.log('Make sure the extension is reloaded after adding icon to web_accessible_resources');
+      });
+      iconElement._errorHandlerAttached = true;
+    }
+  }
+  
   updateGamificationDisplay();
 }
 
-// Load gamification state from storage
+// Load gamification state from storage - uses xpState as source of truth
 async function loadGamificationState() {
   try {
     if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['gamificationState'], (result) => {
-        if (result.gamificationState) {
-          gamificationState = { ...gamificationState, ...result.gamificationState };
-          updateGamificationDisplay();
-        }
-      });
+      // Get user ID for user-specific storage
+      const result = await chrome.storage.local.get(['learnworldsUserData', 'xpState']);
+      const userId = result.learnworldsUserData?.id;
+      const storageKey = userId ? `user_${userId}_xpState` : 'xpState';
+      
+      // Load user-specific XP state if available, otherwise fallback to non-specific
+      const xpStateResult = await chrome.storage.local.get([storageKey, 'xpState']);
+      const xpStateData = xpStateResult[storageKey] || xpStateResult.xpState;
+      
+      if (xpStateData) {
+        // Sync with xpState (source of truth)
+        gamificationState.xp = xpStateData.xp || 0;
+        gamificationState.level = xpStateData.level || 1;
+        // Keep local state for streak and other stats
+        if (xpStateData.streak !== undefined) gamificationState.streak = xpStateData.streak;
+        if (xpStateData.totalStepsCompleted !== undefined) gamificationState.totalStepsCompleted = xpStateData.totalStepsCompleted;
+        if (xpStateData.hintsUsed !== undefined) gamificationState.hintsUsed = xpStateData.hintsUsed;
+        updateGamificationDisplay();
+      }
     }
   } catch (e) {
     console.error('Error loading gamification state:', e);
   }
 }
 
-// Save gamification state to storage
+// Save gamification state to storage - saves to xpState (source of truth, user-specific)
 async function saveGamificationState() {
   try {
     if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ gamificationState });
+      // Get user ID for user-specific storage
+      const result = await chrome.storage.local.get(['learnworldsUserData']);
+      const userId = result.learnworldsUserData?.id;
+      const storageKey = userId ? `user_${userId}_xpState` : 'xpState';
+      
+      // Save to xpState to keep single source of truth
+      const xpState = {
+        xp: gamificationState.xp,
+        level: gamificationState.level,
+        xpForNextLevel: 100,
+        streak: gamificationState.streak,
+        totalStepsCompleted: gamificationState.totalStepsCompleted,
+        hintsUsed: gamificationState.hintsUsed
+      };
+      chrome.storage.local.set({ [storageKey]: xpState });
     }
   } catch (e) {
     console.error('Error saving gamification state:', e);
@@ -342,90 +478,205 @@ async function saveGamificationState() {
 
 // Update gamification display
 function updateGamificationDisplay() {
-  const xpEl = document.getElementById('gamification-xp');
-  const levelEl = document.getElementById('gamification-level');
-  const streakEl = document.getElementById('gamification-streak');
   const progressFill = document.getElementById('gamification-progress-fill');
   const progressText = document.getElementById('gamification-progress-text');
+  const progressBar = document.getElementById('gamification-progress-bar');
   
-  if (xpEl) xpEl.textContent = gamificationState.xp;
-  if (levelEl) levelEl.textContent = gamificationState.level;
-  if (streakEl) streakEl.textContent = gamificationState.streak;
+  if (!progressFill || !progressText) return;
   
-  // Calculate XP needed for next level (100 XP per level)
-  const xpForCurrentLevel = (gamificationState.level - 1) * 100;
-  const xpForNextLevel = gamificationState.level * 100;
+  // Calculate XP using progressive system
+  const xpForCurrentLevel = getXPForLevel(gamificationState.level);
+  const xpForNextLevel = getXPForLevel(gamificationState.level + 1);
   const xpInCurrentLevel = gamificationState.xp - xpForCurrentLevel;
   const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-  const progressPercent = Math.min(100, (xpInCurrentLevel / xpNeeded) * 100);
+  const progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeeded) * 100));
   
-  if (progressFill) {
     progressFill.style.width = `${progressPercent}%`;
-  }
-  if (progressText) {
-    progressText.textContent = `${xpInCurrentLevel} / ${xpNeeded} XP`;
+    progressText.textContent = `${xpInCurrentLevel} / ${xpNeeded}`;
+  
+  // Add streak indicator if active
+  if (gamificationState.streak >= 3 && progressBar) {
+    let streakIndicator = document.getElementById('streak-indicator');
+    if (!streakIndicator) {
+      streakIndicator = document.createElement('div');
+      streakIndicator.id = 'streak-indicator';
+      streakIndicator.className = 'streak-indicator';
+      streakIndicator.style.cssText = `
+        position: absolute;
+        top: -25px;
+        right: 0;
+        font-size: 0.3rem;
+        color: #FBBF24;
+        font-family: 'Press Start 2P', monospace;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        animation: streakPulse 2s ease-in-out infinite;
+        z-index: 1000;
+      `;
+      progressBar.parentElement.style.position = 'relative';
+      progressBar.parentElement.appendChild(streakIndicator);
+    }
+    streakIndicator.textContent = `🔥 ${gamificationState.streak} DAY STREAK!`;
   }
 }
 
 // Award XP and update gamification
-function awardXP(amount, reason = '') {
-  gamificationState.xp += amount;
-  gamificationState.totalStepsCompleted += 1;
+function awardXP(amount, reason = '', multiplier = 1) {
+  // Apply multiplier
+  const finalAmount = Math.floor(amount * multiplier);
   
-  // Check for level up
-  const newLevel = Math.floor(gamificationState.xp / 100) + 1;
-  if (newLevel > gamificationState.level) {
-    gamificationState.level = newLevel;
-    showLevelUpAnimation();
+  // Check and update streak
+  const today = new Date().toDateString();
+  if (gamificationState.lastActivityDate === today) {
+    gamificationState.streak += 1;
+  } else if (gamificationState.lastActivityDate) {
+    // Check if streak should continue (within 1 day)
+    const lastDate = new Date(gamificationState.lastActivityDate);
+    const daysDiff = (new Date() - lastDate) / (1000 * 60 * 60 * 24);
+    if (daysDiff <= 1) {
+      gamificationState.streak += 1;
+    } else {
+      gamificationState.streak = 1; // Reset streak
+    }
+  } else {
+    gamificationState.streak = 1;
+  }
+  gamificationState.lastActivityDate = today;
+  
+  // Apply streak bonus (up to 2x multiplier)
+  let streakMultiplier = 1;
+  if (gamificationState.streak >= 7) {
+    streakMultiplier = 2.0; // 7+ day streak = 2x XP
+  } else if (gamificationState.streak >= 3) {
+    streakMultiplier = 1.5; // 3+ day streak = 1.5x XP
   }
   
-  // Update streak (increment when completing steps)
-  gamificationState.streak += 1;
+  const finalXP = Math.floor(finalAmount * streakMultiplier);
+  gamificationState.xp += finalXP;
+  gamificationState.totalXP += finalXP;
+  gamificationState.totalStepsCompleted += 1;
+  
+  // Calculate new level using progressive system
+  const oldLevel = gamificationState.level;
+  const newLevel = calculateLevel(gamificationState.xp);
+  const leveledUp = newLevel > oldLevel;
+  
+  if (leveledUp) {
+    const levelsGained = newLevel - oldLevel;
+    gamificationState.level = newLevel;
+    showLevelUpAnimation(newLevel, levelsGained);
+  }
   
   updateGamificationDisplay();
   saveGamificationState();
   
-  // Animate XP gain
-  animateXPGain(amount);
+  // Animate XP gain with breakdown
+  animateXPGain(finalXP, {
+    base: amount,
+    multiplier: multiplier,
+    streakBonus: streakMultiplier > 1 ? streakMultiplier : null,
+    reason: reason
+  });
 }
 
 // Show level up animation
-function showLevelUpAnimation() {
+function showLevelUpAnimation(newLevel, levelsGained = 1) {
   const levelUpOverlay = document.createElement('div');
   levelUpOverlay.id = 'level-up-overlay';
+  
+  // Calculate milestone rewards
+  const milestoneRewards = getMilestoneRewards(newLevel);
+  const milestoneText = milestoneRewards.length > 0 
+    ? `<div class="level-up-milestone">${milestoneRewards.join(' ')}</div>` 
+    : '';
+  
   levelUpOverlay.innerHTML = `
     <div class="level-up-content">
       <div class="level-up-icon">🎉</div>
       <div class="level-up-title">LEVEL UP!</div>
-      <div class="level-up-level">LEVEL ${gamificationState.level}</div>
+      <div class="level-up-level">LEVEL ${newLevel}</div>
+      ${levelsGained > 1 ? `<div class="level-up-multi">+${levelsGained} LEVELS!</div>` : ''}
+      ${milestoneText}
+      <div class="level-up-stats">
+        <div class="level-up-stat">
+          <span class="stat-label">TOTAL XP:</span>
+          <span class="stat-value">${gamificationState.totalXP}</span>
+        </div>
+        <div class="level-up-stat">
+          <span class="stat-label">STREAK:</span>
+          <span class="stat-value">${gamificationState.streak} DAYS</span>
+        </div>
+      </div>
     </div>
   `;
   document.body.appendChild(levelUpOverlay);
+  
+  // Play celebration sound effect (if available)
+  try {
+    const audio = new Audio(chrome.runtime.getURL('sounds/levelup.mp3'));
+    audio.volume = 0.3;
+    audio.play().catch(() => {}); // Ignore errors if file doesn't exist
+  } catch (e) {}
   
   setTimeout(() => {
     levelUpOverlay.classList.add('fade-out');
     setTimeout(() => {
       levelUpOverlay.remove();
     }, 500);
-  }, 2000);
+  }, 3000); // Show for 3 seconds
+}
+
+// Get milestone rewards for reaching certain levels
+function getMilestoneRewards(level) {
+  const rewards = [];
+  const milestones = {
+    5: '🏆',
+    10: '⭐',
+    15: '👑',
+    20: '💎',
+    25: '🌟',
+    30: '🎖️',
+    50: '🏅',
+    100: '💯'
+  };
+  
+  if (milestones[level]) {
+    rewards.push(milestones[level]);
+  }
+  
+  return rewards;
 }
 
 // Animate XP gain
-function animateXPGain(amount) {
-  const xpEl = document.getElementById('gamification-xp');
-  if (!xpEl) return;
+function animateXPGain(amount, breakdown = {}) {
+  const progressBar = document.getElementById('gamification-progress-bar');
+  if (!progressBar) return;
   
   const gainIndicator = document.createElement('div');
   gainIndicator.className = 'xp-gain-indicator';
-  gainIndicator.textContent = `+${amount} XP`;
-  xpEl.parentElement.appendChild(gainIndicator);
+  
+  let indicatorText = `+${amount} XP`;
+  if (breakdown.streakBonus) {
+    indicatorText += ` (${breakdown.streakBonus}x streak!)`;
+  }
+  if (breakdown.multiplier && breakdown.multiplier > 1) {
+    indicatorText += ` (${breakdown.multiplier}x bonus)`;
+  }
+  
+  gainIndicator.textContent = indicatorText;
+  progressBar.appendChild(gainIndicator);
+  
+  // Show breakdown tooltip on hover
+  if (breakdown.base && (breakdown.multiplier > 1 || breakdown.streakBonus)) {
+    gainIndicator.title = `Base: ${breakdown.base} XP${breakdown.multiplier > 1 ? ` × ${breakdown.multiplier}` : ''}${breakdown.streakBonus ? ` × ${breakdown.streakBonus} streak` : ''} = ${amount} XP`;
+    gainIndicator.style.cursor = 'help';
+  }
   
   setTimeout(() => {
     gainIndicator.classList.add('fade-out');
     setTimeout(() => {
       gainIndicator.remove();
     }, 500);
-  }, 1500);
+  }, 2000);
 }
 
 // Handle splash screen sequence
@@ -546,30 +797,134 @@ function ensureHighlightShell() {
   }
 }
 
-// Attach event listeners to tutorial buttons
+// Use event delegation for tutorial buttons - works even when elements are recreated
+let tutorialDelegationAttached = false;
+
 function attachTutorialListeners() {
-  document.getElementById('tut-prev-btn').addEventListener('click', () => previousStep());
-  document.getElementById('tut-next-btn').addEventListener('click', () => nextStep());
-  document.getElementById('tut-skip-btn').addEventListener('click', () => closeTutorial());
-  
-  // Hint button handler
-  const hintBtn = document.getElementById('tut-hint-btn');
-  if (hintBtn) {
-    hintBtn.addEventListener('click', async () => {
-      if (!currentStepHintShown && currentStepData && currentTutorialStep >= 0) {
-        // Mark hint as used
-        hintsUsed[currentTutorialStep] = true;
-        currentStepHintShown = true;
+  // Use event delegation on document to handle button clicks
+  // This works even when buttons are recreated with innerHTML
+  if (!tutorialDelegationAttached) {
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      const btn = target.closest('button');
+      if (!btn) return;
+      
+      const btnId = btn.id;
+      
+      if (btnId === 'tut-prev-btn') {
+        e.preventDefault();
+        e.stopPropagation();
+        previousStep();
+      } else if (btnId === 'tut-next-btn') {
+        e.preventDefault();
+        e.stopPropagation();
+        nextStep();
+      } else if (btnId === 'tut-skip-btn') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeTutorial();
+      } else if (btnId === 'tut-hint-btn') {
+        e.preventDefault();
+        e.stopPropagation();
+        const hintBtn = btn;
+        if (!hintBtn.disabled && !currentStepHintShown && currentStepData && currentTutorialStep >= 0) {
+          // Mark hint as used
+          hintsUsed[currentTutorialStep] = true;
+          currentStepHintShown = true;
+          
+          // Show the hint
+          showStepHint(currentStepData, currentTutorialStep).then(() => {
+            // Update button state
+            hintBtn.disabled = true;
+            hintBtn.classList.add('hint-used');
+            const btnText = hintBtn.querySelector('.btn-text');
+            if (btnText) btnText.textContent = 'Hint Used';
+          });
+        }
+      } else if (btnId === 'welcome-next-btn') {
+        e.preventDefault();
+        e.stopPropagation();
         
-        // Show the hint
-        await showStepHint(currentStepData, currentTutorialStep);
+        // Get elements
+        const speechBubble = document.querySelector('.welcome-speech-bubble');
+        const welcomeMascot = document.querySelector('.welcome-mascot');
+        const welcomeContainer = document.querySelector('.welcome-mascot-container');
         
-        // Update button state
-        hintBtn.disabled = true;
-        hintBtn.classList.add('hint-used');
-        hintBtn.querySelector('.btn-text').textContent = 'Hint Used';
+        if (welcomeContainer && welcomeMascot) {
+          // Get the current position relative to viewport
+          const rect = welcomeContainer.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          
+          // Calculate current position as fixed coordinates
+          const currentTop = rect.top;
+          const currentLeft = rect.left;
+          
+          // Set initial fixed position to maintain current visual position
+          welcomeContainer.style.position = 'fixed';
+          welcomeContainer.style.top = currentTop + 'px';
+          welcomeContainer.style.left = currentLeft + 'px';
+          welcomeContainer.style.bottom = 'auto';
+          welcomeContainer.style.right = 'auto';
+          welcomeContainer.style.margin = '0';
+          welcomeContainer.style.transform = 'none';
+          
+          // Hide speech bubble smoothly
+        if (speechBubble) {
+          speechBubble.style.opacity = '0';
+            speechBubble.style.transition = 'opacity 0.3s ease-out';
+        }
+        
+          // Force reflow to ensure initial position is applied
+          void welcomeContainer.offsetHeight;
+        
+          // Now animate to corner position and scale
+          requestAnimationFrame(() => {
+          welcomeMascot.classList.add('shrink-to-corner');
+          welcomeContainer.classList.add('move-to-corner');
+          });
+        }
+        
+        const welcome = document.getElementById('tutorial-welcome');
+        const card = document.getElementById('tutorial-card');
+        const cornerMascot = document.getElementById('corner-mascot');
+        
+        setTimeout(() => {
+          // Hide the animated welcome mascot container
+          if (welcomeContainer) {
+            welcomeContainer.style.opacity = '0';
+            welcomeContainer.style.pointerEvents = 'none';
+          }
+          
+          // Hide welcome screen
+          if (welcome) welcome.style.display = 'none';
+          
+          // Show corner mascot in the exact same position (it's already positioned correctly)
+          if (cornerMascot) {
+            cornerMascot.style.display = 'flex';
+            cornerMascot.style.opacity = '0';
+            cornerMascot.classList.add('fade-in');
+            // Fade in smoothly
+            requestAnimationFrame(() => {
+              cornerMascot.style.transition = 'opacity 0.3s ease-in';
+              cornerMascot.style.opacity = '1';
+            });
+          }
+          
+          if (card) {
+            card.style.display = 'flex';
+            card.classList.add('fade-in');
+            
+            // Lift the card out of the click-through overlay to ensure reliable clicks
+            if (card.parentElement === tutorialOverlay) {
+              document.body.appendChild(card);
+            }
+          }
+        }, 800);
       }
-    });
+    }, true); // Use capture phase for better reliability
+    
+    tutorialDelegationAttached = true;
   }
 
   // Drag support for the card
@@ -611,6 +966,8 @@ function attachTutorialListeners() {
 function injectTutorialCSS() {
   const style = document.createElement('style');
   style.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    
     #scratch-tutorial-overlay {
       position: fixed;
       top: 0;
@@ -635,11 +992,13 @@ function injectTutorialCSS() {
       position: fixed;
       right: 16px;
       bottom: 16px;
-      background: #000;
-      border: 6px solid #10B981;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%);
+      border: 3px solid #10B981;
       padding: 0;
-      width: 380px;
-      box-shadow: 0 0 0 4px #7C3AED, 0 0 30px rgba(16, 185, 129, 0.5);
+      width: 420px;
+      box-shadow: 
+        0 4px 15px rgba(16, 185, 129, 0.4),
+        0 0 20px rgba(16, 185, 129, 0.2);
       pointer-events: all;
       z-index: 1000000;
       font-family: 'Press Start 2P', monospace;
@@ -651,24 +1010,7 @@ function injectTutorialCSS() {
       image-rendering: pixelated;
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
-    }
-    
-    .tutorial-overlay-content::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: rgba(16, 185, 129, 0.2);
-      animation: scanline 4s linear infinite;
-      pointer-events: none;
-      z-index: 9999;
-    }
-    
-    @keyframes scanline {
-      0% { top: 0; }
-      100% { top: 100%; }
+      border-radius: 8px;
     }
     
     @keyframes slideInRight {
@@ -781,10 +1123,24 @@ function injectTutorialCSS() {
     }
     
     .welcome-mascot-container.move-to-corner {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      transform: translate(0, 0);
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 20px !important;
+      top: auto !important;
+      right: auto !important;
+      transform: none !important;
+      align-items: flex-start;
+      z-index: 1000002;
+      transition: bottom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  right 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .welcome-mascot-container.move-to-corner .welcome-speech-bubble {
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      pointer-events: none;
     }
     
     .welcome-speech-bubble {
@@ -854,12 +1210,18 @@ function injectTutorialCSS() {
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
       filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
-      transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  filter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     
     .welcome-mascot.shrink-to-corner {
-      width: 80px;
-      transform: translate(0, 0);
+      width: 100px !important;
+      height: auto !important;
+      transform: none !important;
+      margin: 0 !important;
+      filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.3));
     }
     
     .welcome-next-btn {
@@ -990,11 +1352,12 @@ function injectTutorialCSS() {
     }
     
     .tutorial-header {
-      background: #000;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a0a2e 100%);
       padding: 12px 16px;
-      border-bottom: 4px solid #10B981;
+      border-bottom: 3px solid #10B981;
       cursor: move;
       position: relative;
+      border-radius: 8px 8px 0 0;
     }
     
     .tutorial-header::after {
@@ -1003,25 +1366,57 @@ function injectTutorialCSS() {
       bottom: 0;
       left: 0;
       right: 0;
-      height: 2px;
-      background: #7C3AED;
+      height: 3px;
+      background: linear-gradient(90deg, #7C3AED 0%, #10B981 50%, #7C3AED 100%);
+      animation: headerGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes headerGlow {
+      0%, 100% {
+        opacity: 0.8;
+      }
+      50% {
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(124, 58, 237, 0.6);
+      }
     }
     
     .tutorial-counter {
-      font-size: 12px;
+      font-size: 13px;
       color: #10B981;
       font-weight: normal;
       text-align: center;
-      margin-bottom: 10px;
-      letter-spacing: 2px;
-      text-shadow: 3px 3px 0px #000, 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+      margin-bottom: 0;
+      letter-spacing: 3px;
+      text-shadow: 
+        2px 2px 0px #000,
+        0 0 10px rgba(16, 185, 129, 0.6);
     }
+    
     
     .tutorial-body {
       padding: 20px;
       overflow-y: auto;
       flex: 1;
-      background: #000;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #0a0a0a 100%);
+    }
+    
+    .step-instruction-header {
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .instruction-label {
+      font-size: 10px;
+      color: #7C3AED;
+      text-shadow: 
+        1px 1px 0px #000,
+        0 0 8px rgba(124, 58, 237, 0.6);
+      letter-spacing: 1.5px;
+      font-weight: normal;
+      display: block;
+      text-align: center;
     }
     
     .tutorial-body h3 {
@@ -1030,179 +1425,283 @@ function injectTutorialCSS() {
       color: #10B981;
       font-weight: normal;
       line-height: 1.8;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.2);
-      letter-spacing: 0.5px;
+      text-shadow: 
+        2px 2px 0px #000,
+        0 0 10px rgba(16, 185, 129, 0.6);
+      letter-spacing: 1px;
     }
     
     .tutorial-body p {
-      margin: 0 0 16px 0;
+      margin: 0 0 20px 0;
       font-size: 13px;
       line-height: 2;
-      color: #7C3AED;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.3);
-      letter-spacing: 0.3px;
+      color: #ffffff;
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+      font-weight: normal;
+      background: rgba(16, 185, 129, 0.1);
+      padding: 16px;
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      border-radius: 4px;
+    }
+    
+    #step-description {
+      display: none !important;
     }
     
     .info-box {
-      margin: 16px 0;
-      padding: 16px;
-      background: #0a0a0a;
+      margin: 20px 0;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(167, 139, 250, 0.2) 100%);
       border: 3px solid #7C3AED;
-      font-size: 11px;
-      color: #7C3AED;
-      line-height: 1.8;
+      font-size: 13px;
+      color: #ffffff;
+      line-height: 2;
       display: none;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.3);
-      letter-spacing: 0.3px;
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.9),
+        0 0 12px rgba(124, 58, 237, 0.8),
+        0 0 20px rgba(167, 139, 250, 0.6);
+      letter-spacing: 0.5px;
+      border-radius: 8px;
+      box-shadow: 
+        0 0 25px rgba(124, 58, 237, 0.6),
+        0 0 40px rgba(124, 58, 237, 0.4),
+        inset 0 0 30px rgba(124, 58, 237, 0.15);
+      position: relative;
+    }
+    
+    .info-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(167, 139, 250, 0.05) 100%);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+    
+    .info-box-content {
+      position: relative;
+      z-index: 1;
+      margin: 0;
     }
     
     #step-info-box.show-info {
       display: block !important;
+      animation: infoBoxPulse 2s ease-in-out infinite;
     }
     
-    .info-box-content {
-      margin: 0;
+    @keyframes infoBoxPulse {
+      0%, 100% {
+        box-shadow: 
+          0 0 25px rgba(124, 58, 237, 0.6),
+          0 0 40px rgba(124, 58, 237, 0.4),
+          inset 0 0 30px rgba(124, 58, 237, 0.15);
+        border-color: #7C3AED;
+      }
+      50% {
+        box-shadow: 
+          0 0 35px rgba(124, 58, 237, 0.9),
+          0 0 55px rgba(124, 58, 237, 0.7),
+          inset 0 0 40px rgba(124, 58, 237, 0.25);
+        border-color: #a78bfa;
+      }
     }
     
     .step-actions {
-      margin: 12px 0;
+      margin: 16px 0;
     }
     
     .step-actions button {
       display: block;
       width: 100%;
-      padding: 14px;
+      padding: 14px 16px;
       margin: 8px 0;
-      border: 4px solid #10B981;
-      background: #000;
-      color: #10B981;
+      border: 3px solid #10B981;
+      background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+      color: #ffffff;
       font-size: 10px;
       font-weight: normal;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       text-align: center;
       font-family: 'Press Start 2P', monospace;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
-      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(16, 185, 129, 0.8);
+      box-shadow: 
+        0 6px 0 rgba(5, 150, 105, 0.8), 
+        0 0 20px rgba(16, 185, 129, 0.5),
+        0 0 30px rgba(16, 185, 129, 0.3);
       letter-spacing: 0.5px;
+      border-radius: 8px;
     }
     
     .step-actions button:hover {
-      background: #10B981;
-      color: #000;
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #34D399 0%, #6EE7B7 100%);
+      color: #ffffff;
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 
+        0 8px 0 rgba(5, 150, 105, 1), 
+        0 0 30px rgba(16, 185, 129, 0.8),
+        0 0 50px rgba(52, 211, 153, 0.6);
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(16, 185, 129, 1);
+      border-color: #6EE7B7;
     }
     
     .step-actions button:active {
-      transform: translate(4px, 4px);
-      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 
+        0 2px 0 rgba(5, 150, 105, 0.8), 
+        0 0 10px rgba(16, 185, 129, 0.4);
+      text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
     }
     
     .tutorial-footer {
       display: flex;
       gap: 8px;
       margin-top: 0;
-      padding: 14px;
-      background: #000;
-      border-top: 4px solid #10B981;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a0a2e 100%);
+      border-top: 3px solid #10B981;
+      border-radius: 0 0 8px 8px;
     }
     
     .tut-btn {
       flex: 1;
-      padding: 12px 10px;
-      border: 4px solid #10B981;
-      background: #000;
-      color: #10B981;
-      font-size: 9px;
+      padding: 12px 14px;
+      border: 3px solid #10B981;
+      background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+      color: #ffffff;
+      font-size: 10px;
       font-weight: normal;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Press Start 2P', monospace;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
-      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
-      letter-spacing: 0.8px;
-      min-height: 40px;
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(16, 185, 129, 0.8);
+      box-shadow: 
+        0 6px 0 rgba(5, 150, 105, 0.8), 
+        0 0 20px rgba(16, 185, 129, 0.5),
+        0 0 30px rgba(16, 185, 129, 0.3);
+      letter-spacing: 0.5px;
+      min-height: 44px;
+      border-radius: 8px;
     }
     
     .tut-btn:hover:not(:disabled) {
-      background: #10B981;
-      color: #000;
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #34D399 0%, #6EE7B7 100%);
+      color: #ffffff;
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 
+        0 8px 0 rgba(5, 150, 105, 1), 
+        0 0 30px rgba(16, 185, 129, 0.8),
+        0 0 50px rgba(52, 211, 153, 0.6);
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(16, 185, 129, 1);
+      border-color: #6EE7B7;
     }
     
     .tut-btn:active:not(:disabled) {
-      transform: translate(4px, 4px);
-      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 
+        0 2px 0 rgba(5, 150, 105, 0.8), 
+        0 0 10px rgba(16, 185, 129, 0.4);
+      text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
     }
     
     .tut-btn-primary {
       border-color: #10B981;
-      color: #10B981;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
-      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+      background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+      color: #ffffff;
     }
     
     .tut-btn-primary:hover:not(:disabled) {
-      background: #10B981;
-      color: #000;
-      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #34D399 0%, #6EE7B7 100%);
     }
     
     .tut-btn-secondary {
       border-color: #7C3AED;
-      color: #7C3AED;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(124, 58, 237, 0.5);
-      box-shadow: 4px 4px 0px rgba(124, 58, 237, 0.4), 0 0 12px rgba(124, 58, 237, 0.2);
+      background: linear-gradient(135deg, #7C3AED 0%, #a78bfa 100%);
+      color: #ffffff;
+      box-shadow: 
+        0 6px 0 rgba(91, 33, 182, 0.8), 
+        0 0 20px rgba(124, 58, 237, 0.5),
+        0 0 30px rgba(124, 58, 237, 0.3);
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 15px rgba(124, 58, 237, 0.8);
     }
     
     .tut-btn-secondary:hover:not(:disabled) {
-      background: #7C3AED;
-      color: #000;
-      box-shadow: 2px 2px 0px rgba(124, 58, 237, 0.4), 0 0 15px rgba(124, 58, 237, 0.4);
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+      box-shadow: 
+        0 8px 0 rgba(91, 33, 182, 1), 
+        0 0 30px rgba(124, 58, 237, 0.8),
+        0 0 50px rgba(167, 139, 250, 0.6);
+      border-color: #c4b5fd;
     }
     
     .tut-btn-secondary:disabled {
       opacity: 0.4;
       cursor: not-allowed;
       transform: none;
-      box-shadow: 2px 2px 0px rgba(124, 58, 237, 0.2);
+      background: rgba(124, 58, 237, 0.2);
+      box-shadow: 0 2px 0 rgba(91, 33, 182, 0.4);
     }
     
     .tut-btn-skip {
       border-color: #6B7280;
-      color: #6B7280;
-      text-shadow: 3px 3px 0px #000, 0 0 6px rgba(107, 114, 128, 0.4);
-      box-shadow: 4px 4px 0px rgba(107, 114, 128, 0.3), 0 0 10px rgba(107, 114, 128, 0.15);
+      background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+      color: #ffffff;
+      box-shadow: 
+        0 6px 0 rgba(75, 85, 99, 0.8), 
+        0 0 15px rgba(107, 114, 128, 0.4);
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 10px rgba(107, 114, 128, 0.6);
     }
     
     .tut-btn-skip:hover {
-      background: #6B7280;
-      color: #000;
-      box-shadow: 2px 2px 0px rgba(107, 114, 128, 0.3), 0 0 12px rgba(107, 114, 128, 0.3);
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #9CA3AF 0%, #D1D5DB 100%);
+      box-shadow: 
+        0 8px 0 rgba(75, 85, 99, 1), 
+        0 0 25px rgba(107, 114, 128, 0.6);
+      border-color: #D1D5DB;
     }
     
     .tut-btn-hint {
       border-color: #FBBF24;
-      color: #FBBF24;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(251, 191, 36, 0.6);
-      box-shadow: 4px 4px 0px rgba(251, 191, 36, 0.4), 0 0 12px rgba(251, 191, 36, 0.25);
+      background: linear-gradient(135deg, #FBBF24 0%, #FCD34D 100%);
+      color: #000;
+      box-shadow: 
+        0 6px 0 rgba(217, 119, 6, 0.8), 
+        0 0 20px rgba(251, 191, 36, 0.5),
+        0 0 30px rgba(251, 191, 36, 0.3);
+      text-shadow: 
+        1px 1px 2px rgba(255, 255, 255, 0.3),
+        0 0 10px rgba(251, 191, 36, 0.8);
     }
     
     .tut-btn-hint:hover:not(:disabled) {
-      background: #FBBF24;
-      color: #000;
-      box-shadow: 2px 2px 0px rgba(251, 191, 36, 0.4), 0 0 15px rgba(251, 191, 36, 0.5);
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(135deg, #FCD34D 0%, #FDE68A 100%);
+      box-shadow: 
+        0 8px 0 rgba(217, 119, 6, 1), 
+        0 0 30px rgba(251, 191, 36, 0.8),
+        0 0 50px rgba(252, 211, 77, 0.6);
+      border-color: #FDE68A;
     }
     
     .tut-btn-hint:disabled,
@@ -1210,32 +1709,50 @@ function injectTutorialCSS() {
       opacity: 0.4;
       cursor: not-allowed;
       border-color: #6B7280;
-      color: #6B7280;
-      box-shadow: 2px 2px 0px rgba(107, 114, 128, 0.2);
-      text-shadow: 2px 2px 0px #000;
+      background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 0 rgba(75, 85, 99, 0.4);
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     }
     
     .tut-btn-hint:disabled:hover,
     .tut-btn-hint.hint-used:hover {
       transform: none;
-      background: #000;
-      color: #6B7280;
-      box-shadow: 2px 2px 0px rgba(107, 114, 128, 0.2);
+      background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 0 rgba(75, 85, 99, 0.4);
     }
     
     .tutorial-progress-bar {
-      height: 6px;
-      background: #0a0a0a;
+      height: 10px;
+      background: rgba(16, 185, 129, 0.12);
       margin: 0;
-      border: 2px solid #7C3AED;
+      border: 3px solid #7C3AED;
       overflow: hidden;
+      border-radius: 5px;
+      box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.4),
+        0 0 12px rgba(124, 58, 237, 0.4);
     }
     
     .tutorial-progress-fill {
       height: 100%;
-      background: #10B981;
-      transition: width 0.3s ease;
-      box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+      background: linear-gradient(90deg, #10B981 0%, #34D399 50%, #7C3AED 100%);
+      transition: width 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      box-shadow: 
+        0 0 12px rgba(16, 185, 129, 0.9),
+        0 0 20px rgba(52, 211, 153, 0.6);
+      border-radius: 3px;
+      animation: progressFillShine 2s ease-in-out infinite;
+    }
+    
+    @keyframes progressFillShine {
+      0%, 100% {
+        filter: brightness(1);
+      }
+      50% {
+        filter: brightness(1.2);
+      }
     }
     
     .tutorial-highlight {
@@ -1293,18 +1810,19 @@ function injectTutorialCSS() {
     }
     .pointer-label {
       margin-top: 6px;
-      background: #000;
+      background: rgba(16, 185, 129, 0.1);
       color: #10B981;
       padding: 6px 10px;
-      border: 3px solid #10B981;
+      border: 2px solid #10B981;
       font-size: 8px;
       font-weight: normal;
       white-space: nowrap;
       transform: translateX(-25%);
-      box-shadow: 3px 3px 0px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 2px 0 rgba(5, 150, 105, 0.8);
       font-family: 'Press Start 2P', monospace;
       text-shadow: 1px 1px 0px #000;
       letter-spacing: 0.5px;
+      border-radius: 4px;
     }
     
     /* Scrollbar styling - retro */
@@ -1326,7 +1844,7 @@ function injectTutorialCSS() {
       background: #7C3AED;
     }
     
-    /* Congratulations Achievement Screen - Angry Birds Style */
+    /* Congratulations Achievement Screen - 3D Stars Design */
     #congratulations-overlay {
       position: fixed;
       top: 0;
@@ -1338,6 +1856,7 @@ function injectTutorialCSS() {
       align-items: center;
       justify-content: center;
       animation: fadeIn 0.3s ease-in;
+      background: rgba(0, 0, 0, 0.85);
     }
     
     @keyframes fadeIn {
@@ -1345,71 +1864,15 @@ function injectTutorialCSS() {
       to { opacity: 1; }
     }
     
-    .congrats-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(8px);
-    }
-    
     .congrats-content {
       position: relative;
-      background: #000;
-      border: 6px solid #10B981;
+      background: #1a1a1a;
+      border: 3px solid #10B981;
       padding: 40px 50px;
-      max-width: 500px;
+      max-width: 600px;
       width: 90%;
       text-align: center;
-      box-shadow: 0 0 0 4px #7C3AED, 0 0 40px rgba(16, 185, 129, 0.6), 0 0 80px rgba(124, 58, 237, 0.4);
-      animation: congratsPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-      font-family: 'Press Start 2P', monospace;
-      image-rendering: pixelated;
-    }
-    
-    @keyframes congratsPop {
-      0% {
-        transform: scale(0.5) rotate(-10deg);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.1) rotate(5deg);
-      }
-      100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-      }
-    }
-    
-    .congrats-header {
-      margin-bottom: 40px;
-    }
-    
-    .congrats-title {
-      font-size: 20px;
-      font-weight: normal;
-      color: #10B981;
-      margin: 0 0 20px 0;
-      text-shadow: 3px 3px 0px #000, 0 0 10px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.3);
-      animation: titleBounce 1s ease-in-out infinite;
-      line-height: 1.6;
-      letter-spacing: 2px;
-    }
-    
-    @keyframes titleBounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    
-    .congrats-subtitle {
-      font-size: 10px;
-      color: #7C3AED;
-      margin: 0 0 30px 0;
-      font-weight: normal;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.4);
-      letter-spacing: 1px;
+      border-radius: 8px;
     }
     
     .stars-container {
@@ -1417,266 +1880,847 @@ function injectTutorialCSS() {
       justify-content: center;
       align-items: center;
       gap: 20px;
-      margin: 30px 0;
-      min-height: 80px;
+      margin: 0 0 20px 0;
+      min-height: 220px;
+      perspective: 1200px;
+      perspective-origin: center bottom;
+      transform-style: preserve-3d;
+      position: relative;
+      z-index: 1;
+      pointer-events: none;
     }
     
     .star {
-      font-size: 40px;
-      width: 60px;
-      height: 60px;
+      width: 200px;
+      height: 200px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
-      border: 4px solid #FBBF24;
-      box-shadow: 0 0 0 2px #7C3AED, 0 0 20px rgba(251, 191, 36, 0.6);
-      transform: scale(0) rotate(0deg);
       opacity: 0;
       position: relative;
-      animation: starFloat 2s ease-in-out infinite;
-      filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.8));
+      transform-style: preserve-3d;
+      will-change: transform, opacity;
+      pointer-events: none;
+    }
+
+    .star-1 {
+      transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7);
+    }
+
+    .star-2 {
+      transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1);
+    }
+
+    .star-3 {
+      transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7);
+    }
+
+    /* Dynamic positioning classes */
+    .stars-container.single-star .star-2 {
+      transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1);
+    }
+
+    .stars-container.two-stars .star-1 {
+      transform: rotateY(-20deg) rotateX(10deg) translateX(-40px) translateZ(-80px) scale(0.85);
+    }
+
+    .stars-container.two-stars .star-3 {
+      transform: rotateY(20deg) rotateX(10deg) translateX(40px) translateZ(-80px) scale(0.85);
+    }
+
+    /* Flying in animations for each star */
+    @keyframes flyIn1 {
+      0% {
+        opacity: 0;
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7) translateY(-300px) translateZ(-400px) scale(0.2) rotateY(180deg);
+      }
+      60% {
+        opacity: 1;
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7) translateY(20px) translateZ(50px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7);
+      }
+    }
+
+    @keyframes flyIn2 {
+      0% {
+        opacity: 0;
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1) translateY(-300px) translateZ(-400px) scale(0.2) rotateY(180deg);
+      }
+      60% {
+        opacity: 1;
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1) translateY(20px) translateZ(50px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1);
+      }
+    }
+
+    @keyframes flyIn3 {
+      0% {
+        opacity: 0;
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7) translateY(-300px) translateZ(-400px) scale(0.2) rotateY(180deg);
+      }
+      60% {
+        opacity: 1;
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7) translateY(20px) translateZ(50px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7);
+      }
+    }
+
+    .star-1.star-fly-in {
+      animation: flyIn1 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .star-2.star-fly-in {
+      animation: flyIn2 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .star-3.star-fly-in {
+      animation: flyIn3 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Two-star positioning animations */
+    @keyframes flyInTwo1 {
+      0% {
+        opacity: 0;
+        transform: rotateY(-20deg) rotateX(10deg) translateX(-40px) translateZ(-80px) scale(0.85) translateY(-300px) translateZ(-400px) scale(0.2) rotateY(180deg);
+      }
+      60% {
+        opacity: 1;
+        transform: rotateY(-20deg) rotateX(10deg) translateX(-40px) translateZ(-80px) scale(0.85) translateY(20px) translateZ(50px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: rotateY(-20deg) rotateX(10deg) translateX(-40px) translateZ(-80px) scale(0.85);
+      }
+    }
+
+    @keyframes flyInTwo3 {
+      0% {
+        opacity: 0;
+        transform: rotateY(20deg) rotateX(10deg) translateX(40px) translateZ(-80px) scale(0.85) translateY(-300px) translateZ(-400px) scale(0.2) rotateY(180deg);
+      }
+      60% {
+        opacity: 1;
+        transform: rotateY(20deg) rotateX(10deg) translateX(40px) translateZ(-80px) scale(0.85) translateY(20px) translateZ(50px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: rotateY(20deg) rotateX(10deg) translateX(40px) translateZ(-80px) scale(0.85);
+      }
+    }
+
+    .stars-container.two-stars .star-1.star-fly-in {
+      animation: flyInTwo1 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .stars-container.two-stars .star-3.star-fly-in {
+      animation: flyInTwo3 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     
-    .star::before {
-      content: '⭐';
+    .star-icon {
+      width: 200px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+
+    .star-icon::before {
+      content: '';
       position: absolute;
-      font-size: 40px;
-      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      background: rgba(0, 0, 0, 0.9);
+      transform-origin: center;
+      border-radius: 50%;
+      z-index: -1000;
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    .star-icon img,
+    .star-icon svg {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      object-fit: contain;
+      transform: translateZ(0);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Perspective shadows - warped based on star's 3D transform */
+    .star-1 .star-icon::before {
+      transform: translate(-50%, -50%) 
+                 translateY(150px)
+                 translateX(60px)
+                 scaleY(2.5) 
+                 scaleX(1.8)
+                 skewX(25deg)
+                 rotateX(85deg);
+      width: 200px;
+      height: 120px;
+      border-radius: 50%;
+      filter: blur(8px);
+    }
+
+    .star-2 .star-icon::before {
+      transform: translate(-50%, -50%) 
+                 translateY(160px)
+                 scaleY(2.8) 
+                 scaleX(1.6)
+                 rotateX(85deg);
+      width: 220px;
+      height: 130px;
+      border-radius: 50%;
+      filter: blur(8px);
+    }
+
+    .star-3 .star-icon::before {
+      transform: translate(-50%, -50%) 
+                 translateY(150px)
+                 translateX(-60px)
+                 scaleY(2.5) 
+                 scaleX(1.8)
+                 skewX(-25deg)
+                 rotateX(85deg);
+      width: 200px;
+      height: 120px;
+      border-radius: 50%;
+      filter: blur(8px);
     }
     
     .star-appear {
-      animation: starPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                 starFloat 2s ease-in-out 0.6s infinite;
+      animation: starPop1 0.5s ease-out forwards;
+    }
+
+    .star-2.star-appear {
+      animation: starPop2 0.5s ease-out forwards;
+    }
+
+    .star-3.star-appear {
+      animation: starPop3 0.5s ease-out forwards;
     }
     
-    @keyframes starPop {
+    @keyframes starPop1 {
       0% {
-        transform: scale(0) rotate(0deg);
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7) scale(0);
         opacity: 0;
       }
       50% {
-        transform: scale(1.3) rotate(180deg);
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7) scale(1.2);
         opacity: 1;
       }
       100% {
-        transform: scale(1) rotate(360deg);
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7) scale(1);
         opacity: 1;
       }
     }
     
-    @keyframes starFloat {
-      0%, 100% {
-        transform: translateY(0) scale(1);
+    @keyframes starPop2 {
+      0% {
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1) scale(0);
+        opacity: 0;
       }
       50% {
-        transform: translateY(-15px) scale(1.05);
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1) scale(1.2);
+        opacity: 1;
+      }
+      100% {
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1) scale(1);
+        opacity: 1;
       }
     }
-    
-    .star-1 {
-      animation-delay: 0s;
+
+    @keyframes starPop3 {
+      0% {
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7) scale(0);
+        opacity: 0;
+      }
+      50% {
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7) scale(1.2);
+        opacity: 1;
+      }
+      100% {
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7) scale(1);
+        opacity: 1;
+      }
     }
-    
-    .star-2 {
-      animation-delay: 0.3s;
+
+    .star.inactive {
+      opacity: 0.2;
+      filter: grayscale(1);
     }
-    
-    .star-3 {
-      animation-delay: 0.6s;
+
+    .star.star-appear {
+      opacity: 1 !important;
+    }
+
+    .star-1:not(.inactive) {
+      animation: starFloat1 3s ease-in-out infinite 1.6s;
+    }
+
+    .star-1:not(.inactive) .star-icon::before {
+      animation: starShadow1 3s ease-in-out infinite 1.6s;
+    }
+
+    .star-2:not(.inactive) {
+      animation: starFloat2 3s ease-in-out infinite 1.6s;
+    }
+
+    .star-2:not(.inactive) .star-icon::before {
+      animation: starShadow2 3s ease-in-out infinite 1.6s;
+    }
+
+    .star-3:not(.inactive) {
+      animation: starFloat3 3s ease-in-out infinite 1.6s;
+    }
+
+    .star-3:not(.inactive) .star-icon::before {
+      animation: starShadow3 3s ease-in-out infinite 1.6s;
+    }
+
+    /* Two-star floating animations */
+    .stars-container.two-stars .star-1:not(.inactive) {
+      animation: starFloatTwo1 3s ease-in-out infinite 1.6s;
+    }
+
+    .stars-container.two-stars .star-3:not(.inactive) {
+      animation: starFloatTwo3 3s ease-in-out infinite 1.6s;
+    }
+
+    @keyframes starFloatTwo1 {
+      0%, 100% {
+        transform: rotateY(-20deg) rotateX(10deg) translateX(-40px) translateZ(-80px) scale(0.85) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: rotateY(-22deg) rotateX(12deg) translateX(-40px) translateZ(-70px) scale(0.85) translateY(-8px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes starFloatTwo3 {
+      0%, 100% {
+        transform: rotateY(20deg) rotateX(10deg) translateX(40px) translateZ(-80px) scale(0.85) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: rotateY(22deg) rotateX(12deg) translateX(40px) translateZ(-70px) scale(0.85) translateY(-8px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes starFloat1 {
+      0%, 100% {
+        transform: rotateY(-35deg) rotateX(15deg) translateX(-60px) translateZ(-150px) scale(0.7) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: rotateY(-38deg) rotateX(17deg) translateX(-60px) translateZ(-140px) scale(0.7) translateY(-8px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes starShadow1 {
+      0%, 100% {
+        transform: translate(-50%, -50%) 
+                   translateY(150px)
+                   translateX(60px)
+                   scaleY(2.5) 
+                   scaleX(1.8)
+                   skewX(25deg)
+                   rotateX(85deg);
+        opacity: 0.8;
+      }
+      50% {
+        transform: translate(-50%, -50%) 
+                   translateY(160px)
+                   translateX(65px)
+                   scaleY(2.7) 
+                   scaleX(1.9)
+                   skewX(27deg)
+                   rotateX(85deg);
+        opacity: 0.9;
+      }
+    }
+
+    @keyframes starFloat2 {
+      0%, 100% {
+        transform: rotateY(0deg) rotateX(0deg) translateZ(0) scale(1) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: rotateY(0deg) rotateX(5deg) translateZ(10px) scale(1) translateY(-10px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes starShadow2 {
+      0%, 100% {
+        transform: translate(-50%, -50%) 
+                   translateY(160px)
+                   scaleY(2.8) 
+                   scaleX(1.6)
+                   rotateX(85deg);
+        opacity: 0.8;
+      }
+      50% {
+        transform: translate(-50%, -50%) 
+                   translateY(170px)
+                   scaleY(3.0) 
+                   scaleX(1.7)
+                   rotateX(85deg);
+        opacity: 0.9;
+      }
+    }
+
+    @keyframes starFloat3 {
+      0%, 100% {
+        transform: rotateY(35deg) rotateX(15deg) translateX(60px) translateZ(-150px) scale(0.7) translateY(0);
+        opacity: 1;
+      }
+      50% {
+        transform: rotateY(38deg) rotateX(17deg) translateX(60px) translateZ(-140px) scale(0.7) translateY(-8px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes starShadow3 {
+      0%, 100% {
+        transform: translate(-50%, -50%) 
+                   translateY(150px)
+                   translateX(-60px)
+                   scaleY(2.5) 
+                   scaleX(1.8)
+                   skewX(-25deg)
+                   rotateX(85deg);
+        opacity: 0.8;
+      }
+      50% {
+        transform: translate(-50%, -50%) 
+                   translateY(160px)
+                   translateX(-65px)
+                   scaleY(2.7) 
+                   scaleX(1.9)
+                   skewX(-27deg)
+                   rotateX(85deg);
+        opacity: 0.9;
+      }
     }
     
     .congrats-score {
-      margin: 30px 0;
-      padding: 20px;
-      background: #0a0a0a;
-      border: 4px solid #7C3AED;
-      box-shadow: inset 0 0 20px rgba(124, 58, 237, 0.2), 0 0 20px rgba(124, 58, 237, 0.4);
+      margin: 0 0 20px 0;
+      padding: 15px 20px;
+      background: #0f0f0f;
+      border: 2px solid #7C3AED;
+      border-radius: 6px;
+      display: inline-block;
+      position: relative;
+      z-index: 10;
     }
     
-    .score-text {
-      font-size: 24px;
-      font-weight: normal;
+    .score-xp {
+      font-size: 18px;
       color: #10B981;
-      text-shadow: 3px 3px 0px #000, 0 0 10px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.3);
       margin: 0;
-      line-height: 1.4;
-      letter-spacing: 3px;
-      animation: scorePulse 1.5s ease-in-out infinite;
-    }
-    
-    @keyframes scorePulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-    }
-    
-    .score-subtext {
-      font-size: 10px;
-      color: #7C3AED;
-      margin-top: 12px;
       font-weight: normal;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.4);
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      line-height: 1.5;
     }
     
-    .congrats-message {
-      margin: 30px 0;
-      font-size: 9px;
-      color: #7C3AED;
-      line-height: 1.8;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.4);
-      letter-spacing: 0.5px;
-    }
-    
-    .congrats-message p {
-      margin: 12px 0;
-      font-weight: normal;
+    .buttons-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 0;
+      position: relative;
+      z-index: 100;
+      pointer-events: auto;
     }
     
     .congrats-btn {
-      margin-top: 30px;
-      padding: 14px 30px;
-      font-size: 10px;
+      padding: 14px 28px;
+      font-size: 9px;
       font-weight: normal;
-      color: #10B981;
-      background: #000;
-      border: 4px solid #10B981;
+      color: #ffffff;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      border: none;
       cursor: pointer;
-      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
-      transition: all 0.15s;
       font-family: 'Press Start 2P', monospace;
       text-transform: uppercase;
       letter-spacing: 1px;
-      text-shadow: 3px 3px 0px #000, 0 0 8px rgba(16, 185, 129, 0.5);
-    }
-    
-    .congrats-btn:hover {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0px rgba(16, 185, 129, 0.4), 0 0 15px rgba(16, 185, 129, 0.4);
-      background: #10B981;
-      color: #000;
-      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
-    }
-    
-    .congrats-btn:active {
-      transform: translate(4px, 4px);
-      box-shadow: 0px 0px 0px rgba(16, 185, 129, 0.4), 0 0 10px rgba(16, 185, 129, 0.3);
-    }
-    
-    /* Gamification Bar */
-    #gamification-bar {
-      position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #000;
-      border: 3px solid #10B981;
-      border-top: none;
-      border-bottom: 4px solid #10B981;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 2px #7C3AED;
-      z-index: 999998;
-      padding: 4px 16px;
-      font-family: 'Press Start 2P', monospace;
-      pointer-events: none;
-      max-width: 600px;
-      border-radius: 0 0 8px 8px;
-    }
-    
-    .gamification-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin: 0 auto;
-    }
-    
-    .gamification-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
+      border-radius: 0;
+      transition: all 0.15s ease;
+      box-shadow: 
+        inset 0 0 0 4px #10B981,
+        0 6px 0 0 #6D28D9,
+        0 8px 0 0 rgba(109, 40, 217, 0.5);
       position: relative;
+      z-index: 101;
+      pointer-events: auto;
     }
     
-    .gamification-icon {
-      font-size: 14px;
-      filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.5));
-      animation: iconPulse 2s ease-in-out infinite;
-    }
-    
-    @keyframes iconPulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.1);
-      }
-    }
-    
-    .gamification-label {
-      font-size: 6px;
-      color: #7C3AED;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.4);
-      letter-spacing: 0.5px;
-    }
-    
-    .gamification-value {
-      font-size: 11px;
-      color: #10B981;
-      text-shadow: 2px 2px 0px #000, 0 0 8px rgba(16, 185, 129, 0.6), 0 0 15px rgba(16, 185, 129, 0.3);
-      font-weight: bold;
-      letter-spacing: 0.5px;
-    }
-    
-    .gamification-progress {
-      flex: 1;
-      max-width: 200px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .gamification-progress-label {
-      font-size: 6px;
-      color: #7C3AED;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(124, 58, 237, 0.4);
-      letter-spacing: 0.5px;
-      text-align: center;
-    }
-    
-    .gamification-progress-bar {
-      height: 6px;
-      background: #0a0a0a;
-      border: 2px solid #7C3AED;
-      overflow: hidden;
-      position: relative;
-      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
-    }
-    
-    .gamification-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #10B981 0%, #7C3AED 100%);
-      transition: width 0.5s ease;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.8), 0 0 20px rgba(124, 58, 237, 0.4);
-      position: relative;
-    }
-    
-    .gamification-progress-fill::after {
+    .congrats-btn::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
-      animation: progressShine 2s infinite;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cdefs%3E%3Cstyle%3E.border%7Bfill:%2310B981;%7D%3C/style%3E%3C/defs%3E%3Crect class='border' x='0' y='0' width='100' height='4'/%3E%3Crect class='border' x='0' y='0' width='4' height='100'/%3E%3Crect class='border' x='96' y='0' width='4' height='100'/%3E%3Crect class='border' x='0' y='96' width='100' height='4'/%3E%3C/svg%3E");
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      pointer-events: none;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      z-index: 1;
     }
     
-    @keyframes progressShine {
+    .congrats-btn:hover {
+      background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+      box-shadow: 
+        inset 0 0 0 4px #059669,
+        0 3px 0 0 #6D28D9,
+        0 5px 0 0 rgba(109, 40, 217, 0.5);
+      transform: translateY(3px);
+    }
+    
+    .congrats-btn:hover::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cdefs%3E%3Cstyle%3E.border%7Bfill:%23059669;%7D%3C/style%3E%3C/defs%3E%3Crect class='border' x='0' y='0' width='100' height='4'/%3E%3Crect class='border' x='0' y='0' width='4' height='100'/%3E%3Crect class='border' x='96' y='0' width='4' height='100'/%3E%3Crect class='border' x='0' y='96' width='100' height='4'/%3E%3C/svg%3E");
+    }
+    
+    .congrats-btn:active {
+      transform: translateY(6px);
+      box-shadow: 
+        inset 0 0 0 4px #059669,
+        0 0 0 0 #6D28D9;
+    }
+
+    .icon-btn {
+      width: 50px;
+      height: 50px;
+      padding: 0;
+      background: #1a1a1a;
+      border: 3px solid #7C3AED;
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      position: relative;
+      z-index: 101;
+      pointer-events: auto;
+    }
+
+    .icon-btn:hover {
+      background: #2a2a2a;
+      border-color: #a78bfa;
+      transform: translateY(-2px);
+    }
+
+    .icon-btn:active {
+      transform: translateY(0);
+    }
+
+    .icon-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: #7C3AED;
+    }
+
+    .icon-btn:hover svg {
+      fill: #a78bfa;
+    }
+
+    @media (max-width: 600px) {
+      .congrats-content {
+        padding: 30px 30px;
+      }
+      
+      .stars-container {
+        gap: 10px;
+        min-height: 150px;
+      }
+      
+      .star {
+        width: 120px;
+        height: 120px;
+      }
+      
+      .star-icon {
+        width: 120px;
+        height: 120px;
+      }
+      
+      .score-xp {
+        font-size: 14px;
+      }
+
+      .buttons-container {
+        gap: 10px;
+      }
+
+      .icon-btn {
+        width: 45px;
+        height: 45px;
+      }
+
+      .icon-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .congrats-btn {
+        padding: 14px 28px;
+        font-size: 9px;
+      }
+    }
+    
+    /* Gamification Bar - Exact Copy of Popup XP Bar */
+    #gamification-bar {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 650px;
+      background: transparent;
+      padding: 12px 16px;
+      box-sizing: border-box;
+      z-index: 999998;
+      position: relative;
+      pointer-events: none;
+    }
+    
+    #gamification-bar * {
+      pointer-events: none;
+    }
+    
+    #gamification-bar .gamification-popup-icon,
+    #gamification-bar .gamification-tutorial-btn {
+      pointer-events: all;
+    }
+    
+    
+    .gamification-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .gamification-tutorial-btn {
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #10B981;
+      border-radius: 6px;
+      color: #10B981;
+      font-family: 'Press Start 2P', 'Courier New', monospace !important;
+      font-size: 0.35rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      pointer-events: all;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      backdrop-filter: blur(4px);
+      box-shadow: 
+        0 0 10px rgba(16, 185, 129, 0.4),
+        inset 0 0 5px rgba(16, 185, 129, 0.1);
+    }
+    
+    .gamification-tutorial-btn:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: #34D399;
+      color: #34D399;
+      transform: scale(1.05);
+      box-shadow: 
+        0 0 15px rgba(16, 185, 129, 0.6),
+        inset 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+    
+    .gamification-tutorial-btn:active {
+      transform: scale(1.02);
+      box-shadow: 
+        0 0 8px rgba(16, 185, 129, 0.4),
+        inset 0 0 5px rgba(16, 185, 129, 0.15);
+    }
+    
+    .gamification-tutorial-btn-text {
+      display: block;
+      text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 8px rgba(16, 185, 129, 0.6);
+    }
+    
+    .gamification-progress-container {
+      flex: 1;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .gamification-popup-icon {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(0 0 10px rgba(76, 29, 149, 1)) drop-shadow(0 0 20px rgba(91, 33, 182, 0.9)) drop-shadow(0 0 30px rgba(76, 29, 149, 0.7));
+      transition: transform 0.2s ease, filter 0.2s ease;
+      pointer-events: all;
+      cursor: pointer;
+    }
+    
+    .gamification-popup-icon:hover {
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 15px rgba(76, 29, 149, 1)) drop-shadow(0 0 25px rgba(91, 33, 182, 1)) drop-shadow(0 0 40px rgba(76, 29, 149, 0.9));
+    }
+    
+    .gamification-popup-icon:active {
+      transform: scale(1.05);
+    }
+    
+    .gamification-progress-bar {
+      width: 100%;
+      height: 22px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 3px solid #10B981;
+      border-radius: 11px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 0 15px rgba(16, 185, 129, 0.4),
+        0 0 25px rgba(16, 185, 129, 0.2);
+      animation: progressBarPulse 2s ease-in-out infinite;
+      backdrop-filter: blur(4px);
+    }
+    
+    @keyframes progressBarPulse {
+      0%, 100% {
+        box-shadow: 
+          inset 0 2px 4px rgba(0, 0, 0, 0.3),
+          0 0 15px rgba(16, 185, 129, 0.4),
+          0 0 25px rgba(16, 185, 129, 0.2);
+      }
+      50% {
+        box-shadow: 
+          inset 0 2px 4px rgba(0, 0, 0, 0.3),
+          0 0 20px rgba(16, 185, 129, 0.6),
+          0 0 35px rgba(16, 185, 129, 0.4);
+      }
+    }
+    
+    .gamification-progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+      );
+      animation: shimmer 2s infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+    
+    .gamification-progress-fill {
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        #10B981 0%,
+        #34D399 30%,
+        #6EE7B7 50%,
+        #34D399 70%,
+        #10B981 100%
+      );
+      background-size: 200% 100%;
+      width: 0%;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 
+        0 0 20px rgba(16, 185, 129, 1),
+        0 0 30px rgba(52, 211, 153, 0.6),
+        inset 0 0 15px rgba(255, 255, 255, 0.3);
+      position: relative;
+      animation: progressGlow 2s ease-in-out infinite, fillShine 3s linear infinite;
+      border-radius: 8px;
+    }
+    
+    @keyframes fillShine {
+      0% {
+        background-position: 0% 0%;
+      }
+      100% {
+        background-position: 200% 0%;
+      }
+    }
+    
+    .gamification-progress-fill::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+      );
+      animation: fillShimmer 1.5s infinite;
+    }
+    
+    @keyframes progressGlow {
+      0%, 100% {
+        box-shadow: 
+          0 0 15px rgba(16, 185, 129, 0.8),
+          inset 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+      50% {
+        box-shadow: 
+          0 0 20px rgba(16, 185, 129, 1),
+          inset 0 0 15px rgba(255, 255, 255, 0.3);
+      }
+    }
+    
+    @keyframes fillShimmer {
       0% {
         transform: translateX(-100%);
       }
@@ -1686,11 +2730,36 @@ function injectTutorialCSS() {
     }
     
     .gamification-progress-text {
-      font-size: 6px;
-      color: #10B981;
-      text-shadow: 2px 2px 0px #000, 0 0 6px rgba(16, 185, 129, 0.4);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.4rem;
+      color: #ffffff;
       text-align: center;
-      letter-spacing: 0.3px;
+      letter-spacing: 1px;
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.9),
+        0 0 10px rgba(16, 185, 129, 0.8),
+        0 0 15px rgba(52, 211, 153, 0.6);
+      font-weight: bold;
+      font-family: 'Press Start 2P', 'Courier New', monospace !important;
+      z-index: 10;
+      pointer-events: none;
+      white-space: nowrap;
+      animation: textBounce 2s ease-in-out infinite;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+    
+    @keyframes textBounce {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
     }
     
     .xp-gain-indicator {
@@ -1784,6 +2853,58 @@ function injectTutorialCSS() {
       letter-spacing: 3px;
     }
     
+    .level-up-multi {
+      font-size: 18px;
+      color: #FBBF24;
+      font-family: 'Press Start 2P', monospace;
+      text-shadow: 2px 2px 0px #000, 0 0 15px rgba(251, 191, 36, 0.8);
+      margin-top: 10px;
+      animation: bounce 1s ease-in-out infinite;
+    }
+    
+    .level-up-milestone {
+      font-size: 24px;
+      margin: 15px 0;
+      animation: bounce 1s ease-in-out infinite;
+    }
+    
+    .level-up-stats {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid rgba(16, 185, 129, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .level-up-stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-family: 'Press Start 2P', monospace;
+    }
+    
+    .stat-label {
+      color: #7C3AED;
+      text-shadow: 1px 1px 0px #000;
+    }
+    
+    .stat-value {
+      color: #10B981;
+      text-shadow: 1px 1px 0px #000;
+    }
+    
+    @keyframes streakPulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+    }
+    
     #level-up-overlay.fade-out {
       animation: fadeOut 0.5s ease-out forwards;
     }
@@ -1836,32 +2957,32 @@ async function showStep(stepIndex) {
   document.getElementById('step-num').textContent = stepIndex + 1;
   document.getElementById('total-steps').textContent = tutorialData.length;
   document.getElementById('step-title').textContent = (step.title || `STEP ${stepIndex + 1}`).toUpperCase();
-  document.getElementById('step-description').textContent = step.description || '';
   
-  // Update speech bubble with step instructions
+  // Hide the description div (green div)
+  const descriptionDiv = document.getElementById('step-description');
+  if (descriptionDiv) {
+    descriptionDiv.style.display = 'none';
+  }
+  
+  // Update speech bubble with info box text (purple div text)
   const speechText = document.getElementById('corner-speech-text');
   if (speechText) {
-    const instructionText = step.description || step.title || `STEP ${stepIndex + 1}`;
+    const instructionText = step.infoBox || step.title || `STEP ${stepIndex + 1}`;
     speechText.textContent = instructionText.toUpperCase();
   }
   
-  // Display info box
+  // Display info box with description text (move green div text to purple div)
   const infoBox = document.getElementById('step-info-box');
   const infoBoxContent = infoBox ? infoBox.querySelector('.info-box-content') : null;
-  if (step.infoBox && step.infoBox.trim() && infoBoxContent) {
-    infoBoxContent.textContent = step.infoBox;
+  const descriptionText = step.description || '';
+  if (descriptionText.trim() && infoBoxContent) {
+    infoBoxContent.textContent = descriptionText;
     infoBox.classList.add('show-info');
   } else {
     if (infoBoxContent) infoBoxContent.textContent = '';
     if (infoBox) infoBox.classList.remove('show-info');
   }
   
-  // Update progress bar
-  const progressFill = document.getElementById('progress-fill');
-  if (progressFill && tutorialData.length > 0) {
-    const progress = ((stepIndex + 1) / tutorialData.length) * 100;
-    progressFill.style.width = `${progress}%`;
-  }
   
   // Check if hint was already used for this step
   const hintWasUsed = hintsUsed[stepIndex] || false;
@@ -3588,19 +4709,34 @@ function showCongratulationsScreen() {
   const stepsWithHints = Object.keys(hintsUsed).filter(stepIdx => hintsUsed[stepIdx]).length;
   const hintPercentage = totalSteps > 0 ? (stepsWithHints / totalSteps) * 100 : 0;
   
-  // Award bonus XP for completing tutorial
+  // Award bonus XP for completing tutorial with multipliers
   let bonusXP = 50; // Base completion bonus
+  let multiplier = 1;
+  
   if (hintPercentage === 0) {
     bonusXP = 100; // Perfect run bonus
+    multiplier = 2.0; // 2x multiplier for perfect run
+    gamificationState.perfectRuns += 1;
   } else if (hintPercentage < 25) {
     bonusXP = 75; // Great run bonus
+    multiplier = 1.5; // 1.5x multiplier
   } else if (hintPercentage < 50) {
     bonusXP = 50; // Good run bonus
+    multiplier = 1.2; // 1.2x multiplier
   } else {
     bonusXP = 25; // Completion bonus
+    multiplier = 1.0;
   }
   
-  awardXP(bonusXP, 'Tutorial Completed!');
+  // Speed bonus (if completed quickly)
+  const tutorialStartTime = window.tutorialStartTime || Date.now();
+  const completionTime = (Date.now() - tutorialStartTime) / 1000 / 60; // minutes
+  if (completionTime < 10 && hintPercentage === 0) {
+    multiplier *= 1.3; // Speed bonus for fast perfect completion
+    bonusXP += 25;
+  }
+  
+  awardXP(bonusXP, 'Tutorial Completed!', multiplier);
   
   // Determine star rating based on hint usage
   let stars = 3;
@@ -3632,34 +4768,81 @@ function showCongratulationsScreen() {
     card.style.display = 'none';
   }
   
+  // Get star icon URL
+  let starIconUrl = 'iconpack/Png/star.png';
+  try {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+      starIconUrl = chrome.runtime.getURL('iconpack/Png/star.png');
+    }
+  } catch (e) {
+    console.error('Error getting star icon URL:', e);
+  }
+  
+  // Use the bonusXP that was already calculated and awarded
+  const xpGained = Math.round(bonusXP * multiplier);
+  
   // Create congratulations overlay
   const congratsOverlay = document.createElement('div');
   congratsOverlay.id = 'congratulations-overlay';
+  
+  // Determine container class for star positioning
+  let containerClass = 'three-stars';
+  if (stars === 1) {
+    containerClass = 'single-star';
+  } else if (stars === 2) {
+    containerClass = 'two-stars';
+  }
+  
   congratsOverlay.innerHTML = `
-    <div class="congrats-backdrop"></div>
     <div class="congrats-content">
-      <div class="congrats-header">
-        <h1 class="congrats-title">🎉 Congratulations! 🎉</h1>
-        <p class="congrats-subtitle">You completed the tutorial!</p>
+      <div class="stars-container ${containerClass}">
+        <div class="star star-1 ${stars >= 1 ? '' : 'inactive'}">
+          <div class="star-icon">
+            <img src="${starIconUrl}" alt="Star" />
       </div>
-      
-      <div class="stars-container">
-        ${stars >= 1 ? '<div class="star star-1">⭐</div>' : '<div class="star star-1" style="opacity: 0.3;">⭐</div>'}
-        ${stars >= 2 ? '<div class="star star-2">⭐</div>' : '<div class="star star-2" style="opacity: 0.3;">⭐</div>'}
-        ${stars >= 3 ? '<div class="star star-3">⭐</div>' : '<div class="star star-3" style="opacity: 0.3;">⭐</div>'}
+        </div>
+        <div class="star star-2 ${stars >= 2 ? '' : 'inactive'}">
+          <div class="star-icon">
+            <img src="${starIconUrl}" alt="Star" />
+          </div>
+        </div>
+        <div class="star star-3 ${stars >= 3 ? '' : 'inactive'}">
+          <div class="star-icon">
+            <img src="${starIconUrl}" alt="Star" />
+          </div>
+        </div>
       </div>
       
       <div class="congrats-score">
-        <div class="score-text">${scoreText}</div>
-        <div class="score-subtext">${scoreSubtext}</div>
+        <div class="score-xp">+${xpGained} XP</div>
       </div>
       
-      <div class="congrats-message">
-        <p>${message}</p>
-        <p>Keep learning and creating amazing projects!</p>
-      </div>
-      
+      <div class="buttons-container">
+        <button class="icon-btn" id="congrats-restart-btn" title="Restart">
+          <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">
+            <rect x="2" y="2" width="2" height="2"/>
+            <rect x="4" y="2" width="2" height="2"/>
+            <rect x="2" y="4" width="2" height="2"/>
+            <rect x="6" y="2" width="2" height="2"/>
+            <rect x="8" y="2" width="2" height="2"/>
+            <rect x="10" y="4" width="2" height="2"/>
+            <rect x="12" y="6" width="2" height="2"/>
+            <rect x="12" y="8" width="2" height="2"/>
+            <rect x="10" y="10" width="2" height="2"/>
+            <rect x="8" y="12" width="2" height="2"/>
+            <rect x="6" y="12" width="2" height="2"/>
+            <rect x="4" y="10" width="2" height="2"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="congrats-menu-btn" title="Menu">
+          <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">
+            <rect x="2" y="3" width="12" height="2"/>
+            <rect x="2" y="7" width="12" height="2"/>
+            <rect x="2" y="11" width="12" height="2"/>
+          </svg>
+        </button>
       <button class="congrats-btn" id="congrats-close-btn">Continue</button>
+      </div>
     </div>
   `;
   
@@ -3668,48 +4851,150 @@ function showCongratulationsScreen() {
   // Animate stars appearing (only the earned ones)
   setTimeout(() => {
     const starsEls = congratsOverlay.querySelectorAll('.star');
+    const container = congratsOverlay.querySelector('.stars-container');
+    
     starsEls.forEach((star, index) => {
-      if (index < stars) {
+      let shouldShow = false;
+      
+      if (stars === 1) {
+        // Show only middle star (index 1)
+        shouldShow = (index === 1);
+      } else if (stars === 2) {
+        // Show left and right stars (indices 0 and 2)
+        shouldShow = (index === 0 || index === 2);
+      } else if (stars === 3) {
+        // Show all stars
+        shouldShow = true;
+      }
+      
+      if (shouldShow) {
+        star.classList.remove('inactive');
+        star.style.opacity = '0';
+        
+        // Apply fly-in animation with delay
       setTimeout(() => {
+          star.classList.remove('star-appear');
+          star.classList.add('star-fly-in');
         star.classList.add('star-appear');
-      }, index * 300);
+          
+          // Remove fly-in class after animation completes to allow floating
+          setTimeout(() => {
+            star.classList.remove('star-fly-in');
+          }, 800);
+        }, index * 150);
+      } else {
+        star.classList.remove('star-appear', 'star-fly-in');
+        star.classList.add('inactive');
+        star.style.opacity = '0.2';
       }
     });
-  }, 100);
+  }, 50);
   
   // Close button handler - navigate to next mini lesson
   const closeBtn = congratsOverlay.querySelector('#congrats-close-btn');
-  closeBtn.addEventListener('click', () => {
-    congratsOverlay.remove();
-    closeTutorial();
-    
-    // Send message to popup to start next mini lesson
-    if (typeof chrome !== 'undefined' && chrome.runtime && tutorialMetadata.mainLessonTitle !== null && tutorialMetadata.miniLessonIndex !== null) {
-      chrome.runtime.sendMessage({ 
-        action: 'startNextMiniLesson',
-        mainLessonTitle: tutorialMetadata.mainLessonTitle,
-        currentMiniLessonIndex: tutorialMetadata.miniLessonIndex
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.log('Could not start next mini lesson:', chrome.runtime.lastError.message);
-          // Fallback: try to reopen popup
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      congratsOverlay.remove();
+      closeTutorial();
+      
+      // Send message to popup to start next mini lesson
+      if (typeof chrome !== 'undefined' && chrome.runtime && tutorialMetadata.mainLessonTitle !== null && tutorialMetadata.miniLessonIndex !== null) {
+        chrome.runtime.sendMessage({ 
+          action: 'startNextMiniLesson',
+          mainLessonTitle: tutorialMetadata.mainLessonTitle,
+          currentMiniLessonIndex: tutorialMetadata.miniLessonIndex
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('Could not start next mini lesson:', chrome.runtime.lastError.message);
+            // Fallback: try to reopen popup
+            chrome.runtime.sendMessage({ action: 'reopenPopup' });
+          }
+        });
+      } else {
+        // Fallback: try to reopen popup
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
           chrome.runtime.sendMessage({ action: 'reopenPopup' });
         }
-      });
-    } else {
-      // Fallback: try to reopen popup
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({ action: 'reopenPopup' });
       }
-    }
-  });
+    });
+  } else {
+    console.error('[Continue] Continue button not found!');
+  }
   
-  // Close on backdrop click
-  const backdrop = congratsOverlay.querySelector('.congrats-backdrop');
-  backdrop.addEventListener('click', () => {
+  // Restart button handler
+  const restartBtn = congratsOverlay.querySelector('#congrats-restart-btn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('[Restart] Button clicked, tutorialData length:', tutorialData.length);
+      
+      // Save tutorial data before closing (closeTutorial clears it)
+      const savedTutorialData = [...tutorialData];
+      const savedTutorialMetadata = { ...tutorialMetadata };
+      
+      console.log('[Restart] Saved tutorial data:', savedTutorialData.length, 'steps');
+      
     congratsOverlay.remove();
     closeTutorial();
-  });
+      
+      // Reset tutorial state
+      hintsUsed = {};
+      currentStepHintShown = false;
+      window.tutorialStartTime = Date.now();
+      
+      // Restore tutorial metadata
+      tutorialMetadata = savedTutorialMetadata;
+      
+      // Restart the tutorial with the saved data
+      if (savedTutorialData && savedTutorialData.length > 0) {
+        console.log('[Restart] Restarting tutorial with', savedTutorialData.length, 'steps');
+        // Small delay to ensure cleanup is complete
+        setTimeout(() => {
+          startTutorial(savedTutorialData);
+        }, 100);
+      } else {
+        console.log('[Restart] No tutorial data, requesting restart from popup');
+        // If no tutorial data, request restart from popup
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+          chrome.runtime.sendMessage({ action: 'restartTutorial' });
+        }
+      }
+    });
+  } else {
+    console.error('[Restart] Restart button not found!');
+  }
+  
+  // Menu button handler
+  const menuBtn = congratsOverlay.querySelector('#congrats-menu-btn');
+  if (menuBtn) {
+    menuBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      congratsOverlay.remove();
+      closeTutorial();
+      
+      // Open popup to tutorials page with current tutorial info
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({ 
+          action: 'openPopup', 
+          page: 'mini-lessons',
+          mainLessonTitle: tutorialMetadata.mainLessonTitle
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.log('Could not open popup:', chrome.runtime.lastError.message);
+            // Fallback: try to reopen popup
+            chrome.runtime.sendMessage({ action: 'reopenPopup' });
+          }
+        });
+      }
+    });
+  } else {
+    console.error('[Menu] Menu button not found!');
+  }
 }
 
 function saveAchievement(achievementId, stars) {
@@ -4774,3 +6059,5 @@ window.addEventListener('message', (event) => {
     startTutorial(data.tutorialData || []);
   }
 }, false);
+
+

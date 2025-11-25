@@ -4,20 +4,22 @@ const API_KEY = 'AIzaSyDcmb4l04vlgxKatscOHH9nMXXFMMK9wMY';
 // Styles are now in popup-layout.css
 
 const layoutMarkup = `
-  <!-- XP Bar (always visible) -->
-  <div class="xp-bar" id="xp-bar">
-    <div class="xp-bar-content">
-      <div class="xp-info">
-        <span class="xp-label">XP</span>
-        <span class="xp-value" id="xp-value">0</span>
-      </div>
+  <!-- Shop Button Bar with XP (always visible) -->
+  <div class="shop-bar" id="shop-bar">
+    <div class="shop-bar-content">
       <div class="xp-progress-container">
         <div class="xp-progress-bar">
           <div class="xp-progress-fill" id="xp-progress-fill"></div>
           <div class="xp-progress-text" id="xp-progress-text">0 / 100</div>
         </div>
       </div>
-      <img class="level-icon" src="icons/logo/icon.png" alt="Level">
+      <div class="profile-section" id="profile-section" title="View Profile">
+        <img class="profile-avatar-icon" src="" alt="Profile" data-avatar style="display: none;">
+      </div>
+      <button class="shop-btn" id="shop-btn" title="Shop">
+        <img src="iconpack/Png/treasure_chest.png" alt="Shop" class="shop-btn-icon">
+        <span class="shop-btn-label">Shop</span>
+      </button>
     </div>
   </div>
 
@@ -107,56 +109,123 @@ let xpState = {
   xpForNextLevel: 100
 };
 
-// Load XP state from storage
-function loadXPState() {
+// Initialize database service
+let dbInitialized = false;
+async function initializeDatabase() {
+  if (dbInitialized) return;
+  
   try {
-    if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['xpState'], (result) => {
-        if (result.xpState) {
-          xpState = { ...xpState, ...result.xpState };
-          updateXPBar();
-        }
-      });
+    await databaseService.initialize();
+    dbInitialized = true;
+    console.log('[Popup] Database service initialized');
+  } catch (e) {
+    console.error('[Popup] Failed to initialize database service:', e);
+  }
+}
+
+// Load XP state from storage (user-specific)
+async function loadXPState() {
+  try {
+    await initializeDatabase();
+    
+    const loadedState = await databaseService.loadXPState();
+    if (loadedState) {
+      xpState = { ...xpState, ...loadedState };
+      // Ensure xpForNextLevel is set
+      if (!xpState.xpForNextLevel) {
+        xpState.xpForNextLevel = 100;
+      }
+      updateXPBar();
     }
+    
+    // Listen for storage changes to update XP bar when content.js updates XP
+    chrome.storage.onChanged.addListener(async (changes, areaName) => {
+      if (areaName === 'local') {
+        const userKey = databaseService.getUserKey('xpState');
+        if (changes[userKey]) {
+          const newState = changes[userKey].newValue;
+          if (newState) {
+            xpState = { ...xpState, ...newState };
+            if (!xpState.xpForNextLevel) {
+              xpState.xpForNextLevel = 100;
+            }
+            updateXPBar();
+          }
+        }
+      }
+    });
   } catch (e) {
     console.error('Error loading XP state:', e);
   }
 }
 
-// Save XP state
-function saveXPState() {
+// Save XP state (user-specific)
+async function saveXPState() {
   try {
-    if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ xpState });
-    }
+    await initializeDatabase();
+    await databaseService.saveXPState(xpState);
   } catch (e) {
     console.error('Error saving XP state:', e);
   }
 }
 
-// Update XP bar display
+// Update XP bar display - uses same calculation as content.js
+// Calculate XP required for a specific level (progressive scaling) - same as content.js
+function getXPForLevel(level) {
+  if (level <= 1) return 0;
+  // Progressive formula: base * (level - 1) + scaling factor
+  // Level 1->2: 100 XP, Level 2->3: 150 XP, Level 3->4: 200 XP, etc.
+  const baseXP = 100;
+  const scalingFactor = 50;
+  let totalXP = 0;
+  for (let i = 2; i <= level; i++) {
+    totalXP += baseXP + (i - 2) * scalingFactor;
+  }
+  return totalXP;
+}
+
+// Calculate current level based on total XP - same as content.js
+function calculateLevel(totalXP) {
+  let level = 1;
+  let xpNeeded = 0;
+  while (totalXP >= xpNeeded) {
+    level++;
+    const xpForThisLevel = 100 + (level - 2) * 50;
+    xpNeeded += xpForThisLevel;
+    if (totalXP < xpNeeded) {
+      level--;
+      break;
+    }
+  }
+  return level;
+}
+
 function updateXPBar() {
-  const xpValue = document.getElementById('xp-value');
   const progressFill = document.getElementById('xp-progress-fill');
   const progressText = document.getElementById('xp-progress-text');
   
-  if (xpValue) xpValue.textContent = xpState.xp;
-  
-  const xpInCurrentLevel = xpState.xp % xpState.xpForNextLevel;
-  const progressPercent = (xpInCurrentLevel / xpState.xpForNextLevel) * 100;
+  // Calculate XP using progressive system - same as content.js
+  const xpForCurrentLevel = getXPForLevel(xpState.level);
+  const xpForNextLevel = getXPForLevel(xpState.level + 1);
+  const xpInCurrentLevel = xpState.xp - xpForCurrentLevel;
+  const xpNeeded = xpForNextLevel - xpForCurrentLevel;
+  const progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeeded) * 100));
   
   if (progressFill) {
     progressFill.style.width = `${progressPercent}%`;
   }
   if (progressText) {
-    progressText.textContent = `${xpInCurrentLevel} / ${xpState.xpForNextLevel}`;
+    progressText.textContent = `${xpInCurrentLevel} / ${xpNeeded}`;
   }
+  
+  // Store XP needed for next level
+  xpState.xpForNextLevel = xpNeeded;
 }
 
-// Award XP
+// Award XP - same calculation as content.js
 function awardXP(amount) {
   xpState.xp += amount;
-  const newLevel = Math.floor(xpState.xp / 100) + 1;
+  const newLevel = calculateLevel(xpState.xp);
   if (newLevel > xpState.level) {
     xpState.level = newLevel;
   }
@@ -511,25 +580,25 @@ async function createMiniLessonsPathWithProgress(mainLessonTitle, lessonNumber) 
   });
 }
 
-// Get completion data from storage
-function getCompletionData(key) {
-  return new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.local.get([key], (result) => {
-        resolve(result[key] || {});
-      });
-    } else {
-      resolve({});
-    }
-  });
+// Get completion data from storage (user-specific)
+async function getCompletionData(key) {
+  try {
+    await initializeDatabase();
+    return await databaseService.loadCompletionData(key);
+  } catch (e) {
+    console.error('Error loading completion data:', e);
+    return {};
+  }
 }
 
-// Save completion data to storage
-function saveCompletionData(key, data) {
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    chrome.storage.local.set({ [key]: data }, () => {
-      console.log('Completion data saved:', key, data);
-    });
+// Save completion data to storage (user-specific)
+async function saveCompletionData(key, data) {
+  try {
+    await initializeDatabase();
+    await databaseService.saveCompletionData(key, data);
+    console.log('Completion data saved:', key, data);
+  } catch (e) {
+    console.error('Error saving completion data:', e);
   }
 }
 
@@ -825,14 +894,14 @@ async function callGeminiAPI(prompt, systemInstruction = '') {
   return data.candidates[0].content.parts[0].text;
 }
 
-// Achievements functions
-function loadAchievements() {
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    chrome.storage.local.get(['achievements'], (result) => {
-      const achievements = result.achievements || {};
-      displayAchievements(achievements);
-    });
-  } else {
+// Achievements functions (user-specific)
+async function loadAchievements() {
+  try {
+    await initializeDatabase();
+    const achievements = await databaseService.loadAchievements();
+    displayAchievements(achievements);
+  } catch (e) {
+    console.error('Error loading achievements:', e);
     displayAchievements({});
   }
 }
@@ -843,85 +912,299 @@ function displayAchievements(achievements) {
   
   achievementsList.innerHTML = '';
   
+  // Comprehensive achievement data with categories
   const achievementData = {
+    // Tutorial Achievements
     'tutorial_completed': {
       title: 'Tutorial Master',
-      description: 'You completed the full Scratch tutorial!',
-      icon: '🎓'
+      description: 'Completed the full Scratch tutorial!',
+      icon: '🎓',
+      category: 'tutorials',
+      rarity: 'epic'
+    },
+    'tutorial_perfect': {
+      title: 'Perfect Student',
+      description: 'Completed a tutorial with 3 stars!',
+      icon: '⭐',
+      category: 'tutorials',
+      rarity: 'rare'
+    },
+    'tutorial_lesson_1': {
+      title: 'First Steps',
+      description: 'Completed Tutorial Lesson 1!',
+      icon: '👣',
+      category: 'tutorials',
+      rarity: 'common'
+    },
+    'tutorial_lesson_2': {
+      title: 'Advanced Learner',
+      description: 'Completed Tutorial Lesson 2!',
+      icon: '🚀',
+      category: 'tutorials',
+      rarity: 'rare'
+    },
+    'mini_lesson_complete': {
+      title: 'Mini Master',
+      description: 'Completed 5 mini lessons!',
+      icon: '📚',
+      category: 'tutorials',
+      rarity: 'common'
+    },
+    'all_mini_lessons': {
+      title: 'Completionist',
+      description: 'Completed all mini lessons!',
+      icon: '🏆',
+      category: 'tutorials',
+      rarity: 'epic'
+    },
+    
+    // XP Achievements
+    'xp_100': {
+      title: 'Getting Started',
+      description: 'Earned 100 XP!',
+      icon: '💎',
+      category: 'xp',
+      rarity: 'common'
+    },
+    'xp_500': {
+      title: 'Rising Star',
+      description: 'Earned 500 XP!',
+      icon: '🌟',
+      category: 'xp',
+      rarity: 'common'
+    },
+    'xp_1000': {
+      title: 'XP Collector',
+      description: 'Earned 1,000 XP!',
+      icon: '💫',
+      category: 'xp',
+      rarity: 'rare'
+    },
+    'xp_2500': {
+      title: 'XP Master',
+      description: 'Earned 2,500 XP!',
+      icon: '✨',
+      category: 'xp',
+      rarity: 'rare'
+    },
+    'xp_5000': {
+      title: 'XP Legend',
+      description: 'Earned 5,000 XP!',
+      icon: '👑',
+      category: 'xp',
+      rarity: 'epic'
+    },
+    'level_5': {
+      title: 'Level Up!',
+      description: 'Reached Level 5!',
+      icon: '⬆️',
+      category: 'xp',
+      rarity: 'common'
+    },
+    'level_10': {
+      title: 'Double Digits',
+      description: 'Reached Level 10!',
+      icon: '🔟',
+      category: 'xp',
+      rarity: 'rare'
+    },
+    'level_20': {
+      title: 'Level Master',
+      description: 'Reached Level 20!',
+      icon: '🎯',
+      category: 'xp',
+      rarity: 'epic'
+    },
+    
+    // Performance Achievements
+    'no_hints': {
+      title: 'Independent',
+      description: 'Completed a tutorial without hints!',
+      icon: '🧠',
+      category: 'performance',
+      rarity: 'rare'
+    },
+    'perfect_run': {
+      title: 'Flawless',
+      description: 'Perfect 3-star run on any tutorial!',
+      icon: '💯',
+      category: 'performance',
+      rarity: 'epic'
+    },
+    'speed_demon': {
+      title: 'Speed Demon',
+      description: 'Completed tutorial in record time!',
+      icon: '⚡',
+      category: 'performance',
+      rarity: 'rare'
+    },
+    'first_try': {
+      title: 'First Try',
+      description: 'Completed tutorial on first attempt!',
+      icon: '🎯',
+      category: 'performance',
+      rarity: 'rare'
+    },
+    
+    // Streak Achievements
+    'streak_3': {
+      title: 'On Fire',
+      description: '3 day learning streak!',
+      icon: '🔥',
+      category: 'streaks',
+      rarity: 'common'
+    },
+    'streak_7': {
+      title: 'Week Warrior',
+      description: '7 day learning streak!',
+      icon: '📅',
+      category: 'streaks',
+      rarity: 'rare'
+    },
+    'streak_30': {
+      title: 'Monthly Master',
+      description: '30 day learning streak!',
+      icon: '📆',
+      category: 'streaks',
+      rarity: 'epic'
+    },
+    
+    // Special Achievements
+    'early_bird': {
+      title: 'Early Bird',
+      description: 'Completed tutorial before 9 AM!',
+      icon: '🌅',
+      category: 'special',
+      rarity: 'common'
+    },
+    'night_owl': {
+      title: 'Night Owl',
+      description: 'Completed tutorial after 9 PM!',
+      icon: '🦉',
+      category: 'special',
+      rarity: 'common'
+    },
+    'weekend_warrior': {
+      title: 'Weekend Warrior',
+      description: 'Completed tutorial on weekend!',
+      icon: '🎮',
+      category: 'special',
+      rarity: 'common'
+    },
+    'dedicated': {
+      title: 'Dedicated',
+      description: 'Completed 10 tutorials total!',
+      icon: '💪',
+      category: 'special',
+      rarity: 'rare'
+    },
+    'explorer': {
+      title: 'Explorer',
+      description: 'Tried all tutorial categories!',
+      icon: '🗺️',
+      category: 'special',
+      rarity: 'rare'
     }
   };
   
-  const achievementKeys = Object.keys(achievements);
-  const totalAchievements = achievementKeys.length;
-  const totalStars = achievementKeys.reduce((sum, key) => {
-    return sum + (achievements[key].stars || 3);
-  }, 0);
+  // Get all achievement keys (both earned and available)
+  const allAchievementKeys = Object.keys(achievementData);
+  const earnedKeys = Object.keys(achievements);
   
-  const statsHTML = `
-    <div class="achievements-stats">
-      <div class="stat-box">
-        <div class="stat-value">${totalAchievements}</div>
-        <div class="stat-label">Achievements</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value">${totalStars}</div>
-        <div class="stat-label">Total Stars</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value">${totalAchievements > 0 ? Math.round(totalStars / totalAchievements * 10) / 10 : 0}</div>
-        <div class="stat-label">Avg Stars</div>
-      </div>
+  achievementsList.innerHTML = '';
+  
+  // Create category filter buttons
+  const categories = ['all', 'tutorials', 'xp', 'performance', 'streaks', 'special'];
+  const categoryHTML = `
+    <div class="achievement-categories">
+      ${categories.map(cat => `
+        <button class="category-btn ${cat === 'all' ? 'active' : ''}" data-category="${cat}">
+          ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+      </button>
+      `).join('')}
     </div>
   `;
+  achievementsList.innerHTML += categoryHTML;
   
-  achievementsList.innerHTML = statsHTML;
+  // Create achievements grid
+  const gridHTML = '<div class="achievements-grid" id="achievements-grid"></div>';
+  achievementsList.innerHTML += gridHTML;
   
-  if (achievementKeys.length === 0) {
-    achievementsList.innerHTML += `
+  const grid = document.getElementById('achievements-grid');
+  let currentCategory = 'all';
+  
+  function renderAchievements(category = 'all') {
+    grid.innerHTML = '';
+    const filteredKeys = category === 'all' 
+      ? allAchievementKeys 
+      : allAchievementKeys.filter(key => achievementData[key].category === category);
+    
+    filteredKeys.forEach((key, index) => {
+      const achievement = achievements[key];
+      const data = achievementData[key];
+      const isEarned = !!achievement;
+      
+      const card = document.createElement('div');
+      card.className = `achievement-card ${isEarned ? 'earned' : 'locked'} ${data.rarity}`;
+      card.style.animationDelay = `${index * 0.05}s`;
+      card.dataset.key = key;
+      
+      if (isEarned) {
+        const date = new Date(achievement.date).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        
+        card.innerHTML = `
+          <div class="achievement-icon">${data.icon}</div>
+          <div class="achievement-title">${data.title}</div>
+          <div class="achievement-description">${data.description}</div>
+          <div class="achievement-stars">
+            ${Array(achievement.stars || 3).fill(0).map((_, i) => 
+              `<div class="achievement-star" style="animation-delay: ${i * 0.2}s">⭐</div>`
+            ).join('')}
+    </div>
+          <div class="achievement-date">🏅 ${date}</div>
+        `;
+      } else {
+        card.innerHTML = `
+          <div class="achievement-icon locked-icon">${data.icon}</div>
+          <div class="achievement-title">${data.title}</div>
+          <div class="achievement-description">${data.description}</div>
+          <div class="achievement-locked">🔒 Locked</div>
+        `;
+      }
+      
+      grid.appendChild(card);
+    });
+  }
+  
+  // Category filter functionality
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.category;
+      renderAchievements(currentCategory);
+    });
+  });
+  
+  // Initial render
+  renderAchievements();
+  
+  if (earnedKeys.length === 0 && allAchievementKeys.length > 0) {
+    grid.innerHTML = `
       <div class="no-achievements">
         <div class="no-achievements-icon">🏆</div>
         <div class="no-achievements-title">No Achievements Yet!</div>
         <div class="no-achievements-text">
-          Complete tutorials to unlock amazing achievements!<br>
+          Complete tutorials and earn XP to unlock amazing achievements!<br>
           Each achievement earns you up to 3 stars! ⭐⭐⭐
         </div>
       </div>
     `;
-    return;
   }
-  
-  achievementKeys.forEach((key, index) => {
-    const achievement = achievements[key];
-    const data = achievementData[key] || {
-      title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      description: 'Great job completing this challenge!',
-      icon: '🎯'
-    };
-    
-    const card = document.createElement('div');
-    card.className = 'achievement-card';
-    card.style.animationDelay = `${index * 0.1}s`;
-    
-    const date = new Date(achievement.date).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-    
-    card.innerHTML = `
-      <div class="achievement-icon">${data.icon}</div>
-      <div class="achievement-title">${data.title}</div>
-      <div class="achievement-description">${data.description}</div>
-      <div class="achievement-stars">
-        ${Array(achievement.stars || 3).fill(0).map((_, i) => 
-          `<div class="achievement-star" style="animation-delay: ${i * 0.3}s">⭐</div>`
-        ).join('')}
-      </div>
-      <div class="achievement-date">🏅 Earned on ${date}</div>
-    `;
-    
-    achievementsList.appendChild(card);
-  });
 }
 
 function showAchievements() {
@@ -1133,12 +1416,42 @@ function createFallingIcons() {
 }
 
 // Initialize after DOM is ready
-setTimeout(() => {
+setTimeout(async () => {
+  // Initialize database service (will check for Supabase config)
+  await initializeDatabase();
+  
   loadXPState();
   updateXPBar();
   createTutorialCards();
   loadAchievements();
   createFallingIcons();
+  
+  // Check if we should navigate to tutorials page (from overlay button or URL parameter)
+  const urlParams = new URLSearchParams(window.location.search);
+  const pageParam = urlParams.get('page');
+  
+  chrome.storage.local.get(['popupNavigateTo', 'popupMainLessonTitle'], (result) => {
+    if (result.popupNavigateTo === 'tutorials' || pageParam === 'tutorials') {
+      showTutorialsPage();
+      // Clear the navigation flag
+      chrome.storage.local.remove(['popupNavigateTo', 'popupMainLessonTitle']);
+    } else if (result.popupNavigateTo === 'mini-lessons' && result.popupMainLessonTitle) {
+      // Find the tutorial ID from the mainLessonTitle
+      // Wait a bit for tutorialLessons and games to be loaded
+      setTimeout(() => {
+        const allItems = [...(tutorialLessons || []), ...(games || [])];
+        const item = allItems.find(t => t.title === result.popupMainLessonTitle);
+        if (item) {
+          showMiniLessonsPage(item.id);
+        } else {
+          // Fallback to tutorials page if tutorial not found
+          showTutorialsPage();
+        }
+        // Clear the navigation flags
+        chrome.storage.local.remove(['popupNavigateTo', 'popupMainLessonTitle']);
+      }, 100);
+    }
+  });
   
   // Tutorials button click
   const tutorialsBtn = document.querySelector('.tutorials-text');
@@ -1150,6 +1463,92 @@ setTimeout(() => {
   const achievementsBtn = document.getElementById('achievements-btn');
   if (achievementsBtn) {
     achievementsBtn.addEventListener('click', showAchievements);
+  }
+  
+  // Shop button click
+  const shopBtn = document.getElementById('shop-btn');
+  if (shopBtn) {
+    shopBtn.addEventListener('click', () => {
+      // TODO: Implement shop functionality
+      alert('Shop coming soon! 🛒');
+    });
+  }
+  
+  // Profile section click - open profile page (use profile_v2.html)
+  const profileSection = document.getElementById('profile-section');
+  if (profileSection) {
+    profileSection.addEventListener('click', () => {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        // Use profile_v2.html instead of profile.html
+        const profileUrl = chrome.runtime.getURL('profile_v2.html');
+        chrome.tabs.create({ url: profileUrl });
+      }
+    });
+    
+    // Load avatar for profile icon (after a delay to ensure avatar-utils is loaded)
+    setTimeout(async () => {
+      const profileIcon = profileSection.querySelector('.profile-avatar-icon');
+      if (profileIcon) {
+        if (typeof updateAvatarImage !== 'undefined') {
+          await updateAvatarImage(profileIcon);
+          // Show icon if avatar loaded successfully
+          if (profileIcon.src && !profileIcon.src.includes('robot.png') && profileIcon.src !== '') {
+            profileIcon.style.display = 'block';
+          }
+        } else {
+          // Fallback: load directly
+          try {
+            await initializeDatabase();
+            const avatarKey = databaseService.getUserKey('avatarImage');
+            const result = await chrome.storage.local.get([avatarKey]);
+            if (result[avatarKey] && !result[avatarKey].includes('robot.png')) {
+              profileIcon.src = result[avatarKey];
+              profileIcon.style.display = 'block';
+            }
+          } catch (e) {
+            console.error('[Popup] Error loading avatar:', e);
+          }
+        }
+      }
+    }, 300);
+    
+    // Load avatar for profile icon (after a delay to ensure avatar-utils is loaded)
+    setTimeout(async () => {
+      const profileIcon = profileSection.querySelector('.profile-avatar-icon');
+      if (profileIcon) {
+        if (typeof updateAvatarImage !== 'undefined') {
+          await updateAvatarImage(profileIcon);
+          // Show icon if avatar loaded successfully (not robot)
+          if (profileIcon.src && !profileIcon.src.includes('robot.png') && profileIcon.src !== '') {
+            profileIcon.style.display = 'block';
+          }
+        } else {
+          // Fallback: load directly
+          try {
+            await initializeDatabase();
+            const avatarKey = databaseService.getUserKey('avatarImage');
+            const result = await chrome.storage.local.get([avatarKey]);
+            if (result[avatarKey] && !result[avatarKey].includes('robot.png')) {
+              profileIcon.src = result[avatarKey];
+              profileIcon.style.display = 'block';
+            }
+          } catch (e) {
+            console.error('[Popup] Error loading avatar:', e);
+          }
+        }
+      }
+    }, 300);
+  }
+  
+  // Logo click - open Cadet Hub
+  const logoImg = document.getElementById('logo-img');
+  if (logoImg) {
+    logoImg.style.cursor = 'pointer';
+    logoImg.addEventListener('click', () => {
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.create({ url: 'https://code-cadets.getlearnworlds.com/' });
+      }
+    });
   }
   
   // Back button clicks
