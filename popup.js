@@ -81,6 +81,24 @@ const layoutMarkup = `
     </div>
   </div>
   
+  <!-- Game Maker Page (hidden by default) -->
+  <div class="game-maker-page" id="game-maker-page" style="display: none;">
+    <div class="game-maker-header">
+      <button class="back-btn" id="game-maker-back-btn">
+        <span>← BACK</span>
+      </button>
+      <h2 class="game-maker-page-title">GAME MAKER</h2>
+    </div>
+    <div class="game-maker-content" id="game-maker-content">
+      <div class="game-maker-grid">
+        <div class="game-maker-rectangle"></div>
+        <div class="game-maker-rectangle"></div>
+        <div class="game-maker-rectangle"></div>
+        <div class="game-maker-rectangle"></div>
+      </div>
+    </div>
+  </div>
+  
   <!-- Loading Indicator -->
   <div class="loading" id="loading" style="display: none;">
     <div class="spinner"></div>
@@ -481,8 +499,14 @@ async function showMiniLessonsPage(tutorialId) {
   const tutorialsPage = document.getElementById('tutorials-page');
   const miniLessonsPage = document.getElementById('mini-lessons-page');
   const miniLessonsTitle = document.getElementById('mini-lessons-title');
+  const path = document.getElementById('mini-lessons-path');
   
   if (shell && miniLessonsPage) {
+    // Clear old content immediately to prevent flash
+    if (path) {
+      path.innerHTML = '';
+    }
+    
     shell.style.display = 'none';
     if (tutorialsPage) tutorialsPage.style.display = 'none';
     miniLessonsPage.style.display = 'block';
@@ -1231,6 +1255,359 @@ function hideAchievements() {
   }
 }
 
+// Game Maker Chat State
+let gameIdeationHistory = [];
+let generatedTutorial = null;
+let currentGameConcept = null;
+
+// Add message to chat
+function addChatMessage(message, isAI = false) {
+  const messagesContainer = document.getElementById('chat-messages');
+  if (!messagesContainer) return;
+  
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `chat-message ${isAI ? 'ai-message' : 'user-message'}`;
+  messageDiv.innerHTML = `
+    <div class="message-content">
+      <p>${message}</p>
+    </div>
+  `;
+  
+  messagesContainer.appendChild(messageDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Send chat message
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send-btn');
+  if (!input || !sendBtn) return;
+  
+  const message = input.value.trim();
+  if (!message) return;
+  
+  // Disable input while processing
+  input.disabled = true;
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'SENDING...';
+  
+  // Add user message
+  addChatMessage(message, false);
+  gameIdeationHistory.push({ role: 'user', content: message });
+  input.value = '';
+  
+  try {
+    // Call AI for ideation
+    const systemInstruction = 'You are a friendly and creative game design assistant for Scratch programming. Help users brainstorm and refine their game ideas. Ask questions to understand what they want to create, suggest improvements, and help them think through game mechanics, characters, and features. Be encouraging and enthusiastic!';
+    
+    // Build conversation context
+    const conversationText = gameIdeationHistory.map(msg => 
+      `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+    ).join('\n\n');
+    
+    const prompt = `${conversationText}\n\nAssistant:`;
+    
+    const response = await callGeminiAPI(prompt, systemInstruction);
+    
+    // Add AI response
+    addChatMessage(response, true);
+    gameIdeationHistory.push({ role: 'assistant', content: response });
+    
+    // Check if user seems ready to generate tutorial (look for keywords or ask)
+    const shouldGenerateTutorial = message.toLowerCase().includes('ready') || 
+                                   message.toLowerCase().includes('tutorial') ||
+                                   message.toLowerCase().includes('start') ||
+                                   message.toLowerCase().includes('let\'s build') ||
+                                   message.toLowerCase().includes('make it');
+    
+    if (shouldGenerateTutorial && gameIdeationHistory.length >= 4) {
+      // Generate tutorial
+      await generateGameTutorial();
+    }
+    
+  } catch (error) {
+    addChatMessage(`Sorry, I encountered an error: ${error.message}. Please try again!`, true);
+    console.error('Chat error:', error);
+  } finally {
+    input.disabled = false;
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<span>SEND</span>';
+    input.focus();
+  }
+}
+
+// Generate tutorial from ideation
+async function generateGameTutorial() {
+  const tutorialSection = document.getElementById('game-maker-tutorial');
+  const tutorialContent = document.getElementById('tutorial-content');
+  if (!tutorialSection || !tutorialContent) return;
+  
+  addChatMessage('🎮 Great! Let me create a step-by-step tutorial for your game...', true);
+  
+  try {
+    // Extract game concept from conversation
+    const conversationSummary = gameIdeationHistory
+      .filter(msg => msg.role === 'user')
+      .map(msg => msg.content)
+      .join(' ');
+    
+    currentGameConcept = conversationSummary;
+    
+    const systemInstruction = 'You are an expert Scratch programming tutor. Create detailed, beginner-friendly step-by-step tutorials for building games in Scratch.';
+    
+    const prompt = `Based on this game idea conversation, create a comprehensive step-by-step tutorial for building this game in Scratch:
+
+${conversationSummary}
+
+Create a tutorial with 8-12 steps. Each step should:
+1. Have a clear title
+2. Explain what to do
+3. List the Scratch blocks/categories needed
+4. Be beginner-friendly
+
+Format the response as a JSON array of step objects, each with:
+- title: string
+- description: string
+- action: string (what blocks/actions to use)
+- category: string (Scratch category like "Motion", "Events", etc.)
+
+Return ONLY valid JSON, no other text.`;
+
+    const response = await callGeminiAPI(prompt, systemInstruction);
+    
+    // Try to parse JSON from response
+    let tutorialData;
+    try {
+      // Extract JSON from response (might have markdown code blocks)
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        tutorialData = JSON.parse(jsonMatch[0]);
+      } else {
+        tutorialData = JSON.parse(response);
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, create a structured tutorial from text
+      console.warn('Could not parse JSON, creating from text:', parseError);
+      tutorialData = createTutorialFromText(response);
+    }
+    
+    generatedTutorial = tutorialData;
+    
+    // Display tutorial
+    displayGeneratedTutorial(tutorialData);
+    
+    // Show tutorial section
+    tutorialSection.style.display = 'block';
+    tutorialSection.scrollIntoView({ behavior: 'smooth' });
+    
+    addChatMessage('✅ Tutorial generated! Scroll down to see it and click "START TUTORIAL" when ready!', true);
+    
+  } catch (error) {
+    addChatMessage(`Sorry, I had trouble generating the tutorial: ${error.message}. Let's continue chatting!`, true);
+    console.error('Tutorial generation error:', error);
+  }
+}
+
+// Create tutorial from text if JSON parsing fails
+function createTutorialFromText(text) {
+  const steps = [];
+  const lines = text.split('\n').filter(line => line.trim());
+  
+  let currentStep = null;
+  lines.forEach(line => {
+    if (line.match(/^\d+[\.\)]/) || line.match(/^Step \d+/i)) {
+      if (currentStep) steps.push(currentStep);
+      currentStep = {
+        title: line.replace(/^\d+[\.\)]\s*/, '').replace(/^Step \d+:\s*/i, '').trim(),
+        description: '',
+        action: '',
+        category: 'General'
+      };
+    } else if (currentStep && line.trim()) {
+      if (!currentStep.description) {
+        currentStep.description = line.trim();
+      } else {
+        currentStep.action = (currentStep.action + ' ' + line.trim()).trim();
+      }
+    }
+  });
+  if (currentStep) steps.push(currentStep);
+  
+  return steps.length > 0 ? steps : [
+    { title: 'Setup Project', description: 'Create a new Scratch project', action: 'Open Scratch and create a new project', category: 'Events' },
+    { title: 'Add Sprite', description: 'Add your main character sprite', action: 'Choose or create a sprite', category: 'Looks' },
+    { title: 'Add Movement', description: 'Make your sprite move', action: 'Use Motion blocks to add movement', category: 'Motion' }
+  ];
+}
+
+// Display generated tutorial
+function displayGeneratedTutorial(tutorialData) {
+  const tutorialContent = document.getElementById('tutorial-content');
+  if (!tutorialContent || !Array.isArray(tutorialData)) return;
+  
+  tutorialContent.innerHTML = tutorialData.map((step, index) => `
+    <div class="tutorial-step-card">
+      <div class="step-number">${index + 1}</div>
+      <div class="step-content">
+        <h4 class="step-title">${step.title || `Step ${index + 1}`}</h4>
+        <p class="step-description">${step.description || step.action || 'Follow the instructions'}</p>
+        <div class="step-details">
+          <span class="step-category">${step.category || 'General'}</span>
+          ${step.action ? `<p class="step-action">${step.action}</p>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Start tutorial in Scratch
+async function startGeneratedTutorial() {
+  if (!generatedTutorial || generatedTutorial.length === 0) {
+    alert('No tutorial available. Please generate one first!');
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs && tabs[0];
+      if (!tab || !tab.url) {
+        alert('⚠️ Please navigate to scratch.mit.edu and try again!');
+        hideLoading();
+        return;
+      }
+      
+      const isScratchDomain = tab.url.includes('scratch.mit.edu') || tab.url.includes('projects.scratch.mit.edu');
+      if (!isScratchDomain) {
+        alert('⚠️ Please navigate to scratch.mit.edu and open a project, then try again!');
+        hideLoading();
+        return;
+      }
+
+      const onSuccess = () => {
+        hideLoading();
+        window.close();
+      };
+      
+      const onFail = () => {
+        alert('⚠️ Please open a Scratch project and try again!');
+        hideLoading();
+      };
+
+      const injectScripts = async () => {
+        try {
+          if (chrome.scripting && chrome.scripting.executeScript) {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id, allFrames: true },
+              files: ['selector-map.js', 'content.js']
+            });
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (e) {
+          console.log('Scripts may already be injected:', e.message);
+        }
+      };
+
+      injectScripts().then(() => {
+        chrome.tabs.sendMessage(tab.id, { 
+          action: 'startTutorial', 
+          tutorialData: generatedTutorial,
+          mainLessonTitle: currentGameConcept || 'Custom Game',
+          miniLessonIndex: 0
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Chrome runtime error:', chrome.runtime.lastError.message);
+          }
+          
+          if (response && response.success) {
+            return onSuccess();
+          }
+
+          if (!chrome.runtime.lastError && isScratchDomain) {
+            setTimeout(() => onSuccess(), 500);
+            return;
+          }
+          return onFail();
+        });
+      }).catch((err) => {
+        console.error('Error:', err);
+        onFail();
+      });
+    });
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+    hideLoading();
+  }
+}
+
+function showGameMakerPage() {
+  const shell = document.querySelector('.shell');
+  const tutorialsPage = document.getElementById('tutorials-page');
+  const miniLessonsPage = document.getElementById('mini-lessons-page');
+  const achievementsPage = document.getElementById('achievements-page');
+  const gameMakerPage = document.getElementById('game-maker-page');
+  
+  if (shell && gameMakerPage) {
+    shell.style.display = 'none';
+    if (tutorialsPage) tutorialsPage.style.display = 'none';
+    if (miniLessonsPage) miniLessonsPage.style.display = 'none';
+    if (achievementsPage) achievementsPage.style.display = 'none';
+    gameMakerPage.style.display = 'block';
+    
+    // Clear and reset chat state
+    gameIdeationHistory = [];
+    generatedTutorial = null;
+    currentGameConcept = null;
+    
+    // Clear and reset UI
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+      chatMessages.innerHTML = `
+        <div class="chat-message ai-message">
+          <div class="message-content">
+            <p>👋 Hi! I'm your game design assistant. Tell me what kind of game you'd like to make, and I'll help you brainstorm ideas and create a step-by-step tutorial!</p>
+          </div>
+        </div>
+      `;
+      chatMessages.scrollTop = 0;
+    }
+    
+    const tutorialSection = document.getElementById('game-maker-tutorial');
+    if (tutorialSection) {
+      tutorialSection.style.display = 'none';
+    }
+    
+    const tutorialContent = document.getElementById('tutorial-content');
+    if (tutorialContent) {
+      tutorialContent.innerHTML = '';
+    }
+    
+    // Clear and focus input
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+      chatInput.value = '';
+      chatInput.disabled = false;
+      setTimeout(() => chatInput.focus(), 100);
+    }
+    
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    if (chatSendBtn) {
+      chatSendBtn.disabled = false;
+      chatSendBtn.innerHTML = '<span>SEND</span>';
+    }
+  }
+}
+
+function hideGameMakerPage() {
+  const shell = document.querySelector('.shell');
+  const gameMakerPage = document.getElementById('game-maker-page');
+  if (shell && gameMakerPage) {
+    gameMakerPage.style.display = 'none';
+    shell.style.display = 'grid';
+  }
+}
+
 // Create ping-pong GIF effect
 const div1 = document.querySelector('.div1');
 if (div1) {
@@ -1551,6 +1928,15 @@ setTimeout(async () => {
     });
   }
   
+  // Game Maker div click - show game maker page
+  const gameMakerDiv = document.querySelector('.div4');
+  if (gameMakerDiv) {
+    gameMakerDiv.style.cursor = 'pointer';
+    gameMakerDiv.addEventListener('click', () => {
+      showGameMakerPage();
+    });
+  }
+  
   // Back button clicks
   const tutorialsBackBtn = document.getElementById('tutorials-back-btn');
   if (tutorialsBackBtn) {
@@ -1567,13 +1953,47 @@ setTimeout(async () => {
     achievementsBackBtn.addEventListener('click', hideAchievements);
   }
   
-  // Tutorial card clicks - show mini lessons
+  const gameMakerBackBtn = document.getElementById('game-maker-back-btn');
+  if (gameMakerBackBtn) {
+    gameMakerBackBtn.addEventListener('click', hideGameMakerPage);
+  }
+  
+  // Game Maker chat functionality
+  const chatSendBtn = document.getElementById('chat-send-btn');
+  if (chatSendBtn) {
+    chatSendBtn.addEventListener('click', sendChatMessage);
+  }
+  
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) {
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendChatMessage();
+      }
+    });
+  }
+  
+  const startTutorialBtn = document.getElementById('start-tutorial-btn');
+  if (startTutorialBtn) {
+    startTutorialBtn.addEventListener('click', startGeneratedTutorial);
+  }
+  
+  // Tutorial card clicks - show mini lessons with animation
   document.addEventListener('click', (e) => {
     const card = e.target.closest('.tutorial-card');
-    if (card) {
+    if (card && !card.classList.contains('clicking')) {
       const tutorialId = parseInt(card.dataset.id);
-      showMiniLessonsPage(tutorialId);
+      
+      // Add clicking class to trigger animation
+      card.classList.add('clicking');
+      
+      // Wait for animation to complete (0.6s), then navigate
+      setTimeout(() => {
+        card.classList.remove('clicking');
+        showMiniLessonsPage(tutorialId);
+      }, 600);
     }
+    
   });
   
   

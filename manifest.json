@@ -60,7 +60,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["selector-map.json", "mascot.png", "logo.png", "icons/robot.png", "icons/logo/icon.png", "profile.html", "profile_v2.html", "profile.js", "profile_v2.js", "database-service.js", "avatar-utils.js", "lpc-integration.js", "character-builder.js", "avatar-customizer.js", "vendor/jszip.min.js", "iconpack/Png/star.png", "assets/lpc/*"],
+      "resources": ["selector-map.json", "mascot.png", "logo.png", "icons/robot.png", "icons/logo/icon.png", "profile.html", "profile_v2.html", "avatar-page.html", "profile.js", "profile_v2.js", "database-service.js", "avatar-utils.js", "lpc-integration.js", "character-builder.js", "avatar-customizer.js", "vendor/jszip.min.js", "iconpack/Png/star.png", "assets/lpc/*"],
       "matches": ["https://scratch.mit.edu/*", "https://projects.scratch.mit.edu/*"]
     }
   ]

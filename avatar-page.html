@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Playground - Learn to Code!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #262626;
+      --bg-tertiary: #333333;
+      --text-primary: #e5e5e5;
+      --text-secondary: #a3a3a3;
+      --accent-color: #10B981;
+      --accent-hover: #059669;
+      --border-color: #404040;
+      --danger-color: #ef4444;
+      --success-color: #10B981;
+      --warning-color: #fbbf24;
+      --header-height: 50px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      height: var(--header-height);
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    .nav-items {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .nav-item {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .nav-item:hover {
+      color: var(--text-primary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background-color: #404040;
+    }
+
+    .btn-primary {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--accent-color);
+    }
+
+    .btn-primary:hover {
+      background-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-submit {
+      background-color: var(--accent-color);
+      color: #000;
+      font-weight: 600;
+    }
+
+    .btn-submit:hover {
+      background-color: var(--accent-hover);
+    }
+
+    /* Main Layout */
+    .main-container {
+      flex: 1;
+      display: flex;
+      height: calc(100vh - var(--header-height));
+      overflow: hidden;
+    }
+
+    .left-panel {
+      width: 40%;
+      background-color: var(--bg-primary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      min-width: 300px;
+    }
+
+    .right-panel {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+    }
+
+    /* Panel Tabs */
+    .panel-tabs {
+      display: flex;
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent-color);
+      background-color: var(--bg-primary);
+    }
+
+    /* Problem Description */
+    .problem-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .problem-header {
+      margin-bottom: 20px;
+    }
+
+    .problem-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .difficulty-tag {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .difficulty-tag.easy {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success-color);
+    }
+
+    .difficulty-tag.medium {
+      background-color: rgba(251, 191, 36, 0.1);
+      color: var(--warning-color);
+    }
+
+    .difficulty-tag.hard {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--danger-color);
+    }
+
+    .problem-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .example-box {
+      background-color: var(--bg-secondary);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .example-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .code-block {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-primary);
+      background-color: var(--bg-tertiary);
+      padding: 8px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+
+    /* Editor Section */
+    .editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .code-editor {
+      flex: 1;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 16px;
+      border: none;
+      resize: none;
+      outline: none;
+      white-space: pre;
+      tab-size: 2;
+    }
+
+    .line-numbers {
+      position: absolute;
+      left: 0;
+      top: 16px;
+      bottom: 0;
+      width: 40px;
+      text-align: right;
+      padding-right: 10px;
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      user-select: none;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    /* Output Section */
+    .output-container {
+      height: 200px;
+      background-color: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .output-content {
+      flex: 1;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      overflow-y: auto;
+      color: var(--text-primary);
+    }
+
+    .output-line {
+      margin-bottom: 4px;
+    }
+
+    .output-line.error { color: var(--danger-color); }
+    .output-line.success { color: var(--success-color); }
+    .output-line.info { color: var(--text-secondary); }
+
+    /* Result Status */
+    .result-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .result-status.correct {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success-color);
+    }
+
+    .result-status.incorrect {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--danger-color);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-tertiary);
+      border-radius: 5px;
+      border: 2px solid var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #505050;
+    }
+
+    /* Challenge List Dropdown (Simple implementation) */
+    .challenge-select {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      outline: none;
+      font-family: 'Inter', sans-serif;
+      max-width: 200px;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <img src="icons/logo/icon.png" alt="CadetHub" class="logo-icon">
+        <span>CadetHub</span>
+      </div>
+      <div class="nav-items">
+        <select id="challenge-select" class="challenge-select">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" id="run-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Run
+      </button>
+      <button class="btn btn-submit" id="submit-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Submit
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="main-container">
+    <!-- Left Panel: Problem Description -->
+    <div class="left-panel">
+      <div class="panel-tabs">
+        <div class="tab active">Description</div>
+        <div class="tab">Solutions</div>
+        <div class="tab">Submissions</div>
+      </div>
+      <div class="problem-content" id="problem-content">
+        <div class="problem-header">
+          <div class="problem-title">
+            <span id="problem-title-text">1. Hello World</span>
+            <span class="difficulty-tag easy" id="difficulty-badge">Easy</span>
+          </div>
+        </div>
+        <div class="problem-text" id="problem-description">
+          <!-- Description injected here -->
+        </div>
+        <div id="examples-container">
+          <!-- Examples injected here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Editor & Output -->
+    <div class="right-panel">
+      <!-- Editor -->
+      <div class="editor-container">
+        <div class="panel-tabs">
+          <div class="tab active">main.js</div>
+        </div>
+        <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
+      </div>
+
+      <!-- Output -->
+      <div class="output-container">
+        <div class="panel-tabs">
+          <div class="tab active">Output</div>
+          <div class="tab">Console</div>
+        </div>
+        <div class="output-content" id="output-content">
+          <div class="output-line info">Ready to code! Click Run to check your code.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Challenge Data
+    const challenges = {
+      1: {
+        title: "1. Hello World",
+        description: "Write a program that prints 'Hello, World!' to the screen. This is your first coding challenge!",
+        difficulty: "easy",
+        starterCode: "print('Hello, World!');",
+        examples: [
+          { input: "", output: "Hello, World!" }
+        ],
+        testCases: [
+          { input: "", expected: "Hello, World!" }
+        ]
+      },
+      2: {
+        title: "2. Add Numbers",
+        description: "Create two variables 'a' and 'b', add them together, and print the result. Set a = 5 and b = 3.",
+        difficulty: "easy",
+        starterCode: "let a = 5;\nlet b = 3;\n// Your code here\n",
+        examples: [
+          { input: "a=5, b=3", output: "8" }
+        ],
+        testCases: [
+          { input: "", expected: "8" }
+        ]
+      },
+      3: {
+        title: "3. Count to 10",
+        description: "Use a for loop to print numbers from 1 to 10, each on a new line.",
+        difficulty: "medium",
+        starterCode: "// Use a for loop\n",
+        examples: [
+          { input: "", output: "1\n2\n...\n10" }
+        ],
+        testCases: [
+          { input: "", expected: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10" }
+        ]
+      },
+      4: {
+        title: "4. Even or Odd",
+        description: "Check if a variable 'num' is even or odd. If even print 'Even', if odd print 'Odd'. Set num = 8.",
+        difficulty: "medium",
+        starterCode: "let num = 8;\n// Check if even\n",
+        examples: [
+          { input: "num=8", output: "Even" }
+        ],
+        testCases: [
+          { input: "", expected: "Even" }
+        ]
+      },
+      5: {
+        title: "5. Multiplication Table",
+        description: "Print the multiplication table for 5 (from 1 to 5). Format: '5 × 1 = 5'",
+        difficulty: "hard",
+        starterCode: "let num = 5;\n// Print table\n",
+        examples: [
+          { input: "num=5", output: "5 × 1 = 5\n..." }
+        ],
+        testCases: [
+          { input: "", expected: "5 × 1 = 5\n5 × 2 = 10\n5 × 3 = 15\n5 × 4 = 20\n5 × 5 = 25" }
+        ]
+      }
+    };
+
+    // State
+    let currentChallengeId = 1;
+
+    // Elements
+    const problemTitle = document.getElementById('problem-title-text');
+    const difficultyBadge = document.getElementById('difficulty-badge');
+    const problemDescription = document.getElementById('problem-description');
+    const examplesContainer = document.getElementById('examples-container');
+    const codeEditor = document.getElementById('code-editor');
+    const outputContent = document.getElementById('output-content');
+    const challengeSelect = document.getElementById('challenge-select');
+
+    // Helper: Print
+    function print(...args) {
+      return args.map(arg => {
+        if (typeof arg === 'object') return JSON.stringify(arg);
+        return String(arg);
+      }).join(' ');
+    }
+
+    // Initialize UI
+    function init() {
+      // Populate Dropdown
+      Object.keys(challenges).forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = challenges[id].title;
+        challengeSelect.appendChild(option);
+      });
+
+      challengeSelect.addEventListener('change', (e) => {
+        loadChallenge(parseInt(e.target.value));
+      });
+
+      loadChallenge(1);
+    }
+
+    function loadChallenge(id) {
+      currentChallengeId = id;
+      const challenge = challenges[id];
+      
+      // Update Dropdown
+      challengeSelect.value = id;
+
+      // Update Header
+      problemTitle.textContent = challenge.title;
+      difficultyBadge.textContent = challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1);
+      difficultyBadge.className = `difficulty-tag ${challenge.difficulty}`;
+
+      // Update Content
+      problemDescription.textContent = challenge.description;
+
+      // Examples
+      examplesContainer.innerHTML = '';
+      challenge.examples.forEach((ex, idx) => {
+        const exBox = document.createElement('div');
+        exBox.className = 'example-box';
+        exBox.innerHTML = `
+          <div class="example-label">Example ${idx + 1}</div>
+          <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">Input: <span style="color: var(--text-primary); font-family: 'JetBrains Mono'">${ex.input || 'None'}</span></div>
+          <div style="font-size: 13px; color: var(--text-secondary);">Output: <span style="color: var(--text-primary); font-family: 'JetBrains Mono'">${ex.output.replace(/\n/g, '\\n')}</span></div>
+        `;
+        examplesContainer.appendChild(exBox);
+      });
+
+      // Editor
+      codeEditor.value = challenge.starterCode;
+      outputContent.innerHTML = '<div class="output-line info">Ready to code!</div>';
+    }
+
+    // Run Code Logic
+    function runCode(isSubmit = false) {
+      const code = codeEditor.value;
+      outputContent.innerHTML = '';
+      
+      const challenge = challenges[currentChallengeId];
+      const expected = challenge.testCases[0].expected.trim();
+      
+      let capturedOutput = [];
+      
+      // Mock print
+      const mockPrint = (...args) => {
+        const line = args.map(a => String(a)).join(' ');
+        capturedOutput.push(line);
+      };
+
+      try {
+        // Safe-ish execution
+        const func = new Function('print', code);
+        func(mockPrint);
+
+        // Display Output
+        capturedOutput.forEach(line => {
+          const div = document.createElement('div');
+          div.className = 'output-line';
+          div.textContent = line;
+          outputContent.appendChild(div);
+        });
+
+        if (capturedOutput.length === 0) {
+           const div = document.createElement('div');
+           div.className = 'output-line info';
+           div.textContent = 'No output returned.';
+           outputContent.appendChild(div);
+        }
+
+        if (isSubmit) {
+          const actual = capturedOutput.join('\n').trim();
+          const isCorrect = actual === expected; // Simple exact match for now
+
+          const statusDiv = document.createElement('div');
+          statusDiv.className = `result-status ${isCorrect ? 'correct' : 'incorrect'} animate-fade-in`;
+          statusDiv.style.marginTop = '10px';
+          statusDiv.innerHTML = isCorrect 
+            ? '<span>✓</span> Accepted' 
+            : '<span>✕</span> Wrong Answer';
+          
+          outputContent.appendChild(statusDiv);
+          
+          if (!isCorrect) {
+             const diffDiv = document.createElement('div');
+             diffDiv.className = 'output-line info';
+             diffDiv.style.fontSize = '12px';
+             diffDiv.innerHTML = `<br>Expected:<br>${expected.replace(/\n/g, '<br>')}<br><br>Actual:<br>${actual.replace(/\n/g, '<br>')}`;
+             outputContent.appendChild(diffDiv);
+          }
+        }
+
+      } catch (e) {
+        const errDiv = document.createElement('div');
+        errDiv.className = 'output-line error';
+        errDiv.textContent = `Error: ${e.message}`;
+        outputContent.appendChild(errDiv);
+      }
+    }
+
+    document.getElementById('run-btn').addEventListener('click', () => runCode(false));
+    document.getElementById('submit-btn').addEventListener('click', () => runCode(true));
+
+    // Basic tab handling (visual only for now)
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        // Find parent container
+        const parent = e.target.closest('.panel-tabs');
+        parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+      });
+    });
+
+    // Init
+    init();
+
+    // Keyboard Shortcut (Ctrl+Enter to Run)
+    codeEditor.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runCode(false);
+      }
+      
+      // Simple Tab support
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        codeEditor.value = codeEditor.value.substring(0, start) + "  " + codeEditor.value.substring(end);
+        codeEditor.selectionStart = codeEditor.selectionEnd = start + 2;
+      }
+    });
+
+  </script>
+</body>
+</html>

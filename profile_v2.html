@@ -1098,6 +1098,9 @@
           <button class="customize-btn" id="customize-avatar-btn">
             <span>🎨 Create Your Character</span>
           </button>
+          <button class="customize-btn" id="open-avatar-page-btn" style="margin-top: 10px;">
+            <span>🚀 Open Avatar Page</span>
+          </button>
           </div>
         </div>
       </div>
@@ -1231,6 +1234,19 @@
                           console.error('[Profile V2] initializeCharacterBuilder function not found!');
                       }
                   }, 200);
+              });
+          }
+
+          // Open avatar page button
+          const openAvatarPageBtn = document.getElementById('open-avatar-page-btn');
+          if (openAvatarPageBtn) {
+              openAvatarPageBtn.addEventListener('click', () => {
+                  if (typeof chrome !== 'undefined' && chrome.runtime) {
+                      const avatarPageUrl = chrome.runtime.getURL('avatar-page.html');
+                      chrome.tabs.create({ url: avatarPageUrl });
+                  } else {
+                      console.error('[Profile V2] Chrome extension API not available');
+                  }
               });
           }
       });

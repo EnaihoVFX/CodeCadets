@@ -45,6 +45,52 @@
       background: #000;
       overflow-y: auto;
       position: relative;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .grid-rectangle {
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border: 3px solid #10B981;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+    }
+
+    .grid-rectangle::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: -4px;
+      bottom: -4px;
+      border: 2px solid #7C3AED;
+      border-radius: 12px;
+      z-index: -1;
+      transition: all 0.3s ease;
+    }
+
+    .grid-rectangle:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+      border-color: #34D399;
+      background: linear-gradient(135deg, #1a2e1a 0%, #0f1f0f 100%);
+    }
+
+    .grid-rectangle:hover::before {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-color: #10B981;
     }
 
     /* Footer Section */
@@ -161,7 +207,10 @@
 <body>
   <div class="container">
     <main class="main-content" aria-label="Game Maker workspace">
-      <!-- Reserved for future Game Maker interface -->
+      <div class="grid-rectangle" role="button" tabindex="0"></div>
+      <div class="grid-rectangle" role="button" tabindex="0"></div>
+      <div class="grid-rectangle" role="button" tabindex="0"></div>
+      <div class="grid-rectangle" role="button" tabindex="0"></div>
     </main>
     
     <!-- Footer Section -->
