@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Design</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Pixelify+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        @font-face {
+            font-family: 'BoldPixels';
+            src: url('../fonts/BoldPixels.ttf') format('truetype');
+        }
+        :root {
+            --bg-page: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-blue: #3b82f6;
+            --border-color: #cbd5e1;
+            --btn-shadow: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-page);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Navigation */
+        .top-left-logo {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            z-index: 1000;
+        }
+
+        .top-left-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .top-right-profile {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 1000;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .top-right-profile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .top-right-profile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Avatar Container */
+        .avatar-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transform: scale3d(3, 3, 1);
+            transform-origin: center;
+            perspective: 800px;
+            perspective-origin: center center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform-origin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+
+        .avatar-container.zoom-face {
+            transform: scale3d(10, 10, 1) translate3d(-25px, -60px, 0);
+            transform-origin: center top;
+        }
+
+        /* Hair rotation arrows */
+        .hair-decoration {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            z-index: 1001;
+            pointer-events: auto;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            user-select: none;
+        }
+
+        .hair-decoration:hover {
+            opacity: 0.5 !important;
+        }
+
+        .hair-decoration.left {
+            left: calc(50% - 54px);
+            top: calc(50% - 28px);
+            transform: translateY(-50%) translateX(-15px) scaleX(-1);
+            filter: grayscale(100%) opacity(0.3);
+        }
+
+        .hair-decoration.right {
+            right: calc(50% - 54px);
+            top: calc(50% - 28px);
+            transform: translateY(-50%) translateX(15px);
+            filter: grayscale(100%) opacity(0.3);
+        }
+
+        .hair-decoration.show {
+            opacity: 0.3;
+        }
+
+        .hair-decoration.left.show {
+            transform: translateY(-50%) translateX(0) scaleX(-1);
+        }
+
+        .hair-decoration.right.show {
+            transform: translateY(-50%) translateX(0);
+        }
+
+        /* Adjust position when zoomed */
+        .avatar-container.zoom-face .hair-decoration.left {
+            left: calc(50% - 54px);
+            top: calc(50% - 38px);
+        }
+
+        .avatar-container.zoom-face .hair-decoration.right {
+            right: calc(50% - 54px);
+            top: calc(50% - 38px);
+        }
+
+        .pixel-char {
+            width: 180px;
+            height: 180px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            position: relative;
+            z-index: 2;
+        }
+
+        .shadow {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 50%;
+            z-index: 0;
+            filter: blur(4px);
+        }
+
+        /* Rotate Icon - 3D Perspective */
+        .rotate-icon {
+            position: relative;
+            margin-top: -107px;
+            width: 160px;
+            height: 160px;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            transform: rotateX(75deg) translateZ(-20px) scale(1.2);
+            transform-style: preserve-3d;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .rotate-icon:active {
+            cursor: grabbing;
+        }
+
+        .rotate-icon:hover {
+            opacity: 0.8;
+        }
+
+        .rotate-icon.dragging {
+            opacity: 1;
+        }
+
+        .rotate-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Randomize Button - Hidden */
+        .btn-random {
+            display: none;
+        }
+
+        /* Pill-shaped Overlay */
+        .pill-overlay {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 20px;
+            gap: 8px;
+        }
+
+        .pill-button {
+            flex: 1;
+            height: 60px;
+            background: transparent;
+            border: none;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .pill-button svg {
+            color: var(--text-primary);
+            fill: none;
+            stroke: none;
+            stroke-width: 0;
+            opacity: 0.6;
+        }
+
+        .pill-button img,
+        .pill-button .body-icon,
+        .pill-button .hair-icon,
+        .pill-button .clothes-icon,
+        .pill-button .accessories-icon,
+        .pill-button .wardrobe-icon {
+            opacity: 0.6;
+            object-fit: contain;
+        }
+
+        .pill-button:hover svg,
+        .pill-button:hover img,
+        .pill-button:hover .body-icon,
+        .pill-button:hover .hair-icon,
+        .pill-button:hover .clothes-icon,
+        .pill-button:hover .accessories-icon,
+        .pill-button:hover .wardrobe-icon {
+            opacity: 1;
+        }
+
+        /* Side Panel */
+        .side-panel {
+            position: fixed;
+            right: -500px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 500px;
+            height: 80vh;
+            max-height: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.08);
+            z-index: 2000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .side-panel.open {
+            right: 20px;
+        }
+
+        .side-panel-content {
+            padding: 30px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #panel-title {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .panel-grid.body-grid {
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        .grid-item {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .grid-item:hover:not(.color-swatch) {
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-item.color-swatch:hover:not(.active) {
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .grid-item.active:not(.color-swatch) {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .grid-item canvas {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .grid-item.color-swatch {
+            background: var(--swatch-color);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            transition: transform 0.2s;
+        }
+
+        .grid-item.color-swatch:hover {
+            transform: translateY(-2px);
+        }
+
+        .grid-item.color-swatch.active {
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--accent-blue);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .side-panel-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            z-index: 10;
+        }
+
+        .side-panel-close:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .side-panel-close svg {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Left Logo -->
+    <div class="top-left-logo">
+        <img src="../icons/logo/icon.png" alt="Cadet Hub">
+    </div>
+
+    <!-- Top Right Profile -->
+    <div class="top-right-profile">
+        <img src="" alt="Profile" id="profile-image">
+    </div>
+
+    <div class="avatar-container">
+        <canvas id="avatar-canvas" class="pixel-char" width="64" height="64"></canvas>
+        <div class="shadow"></div>
+        <div class="rotate-icon">
+            <i data-lucide="refresh-cw" width="160" height="160"></i>
+        </div>
+        <svg class="hair-decoration left" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice"><defs><pattern id="pppixelate-pattern-hair-left" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="8" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="15" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-hair-left)"></rect></svg>
+        <svg class="hair-decoration right" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice"><defs><pattern id="pppixelate-pattern-hair-right" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="8" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="15" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-hair-right)"></rect></svg>
+    </div>
+
+    <button class="btn-random" onclick="randomize()">
+        <div class="icon-wrap">
+            <i data-lucide="refresh-cw" width="18" height="18"></i>
+        </div>
+        <span>Randomize</span>
+    </button>
+
+    <div class="pill-overlay">
+        <div class="pill-button">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="60" height="60" class="body-icon"><defs><pattern id="pppixelate-pattern" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="7" y="3" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="3" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="3" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="3" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="3" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="3" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="16" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern)"></rect></svg>
+        </div>
+        <div class="pill-button">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="60" height="60" class="hair-icon"><defs><pattern id="pppixelate-pattern-hair" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="6" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="10" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="14" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="11" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="15" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="12" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="15" y="12" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="5" y="13" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="14" y="13" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="5" y="14" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="6" y="14" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="13" y="14" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="14" y="14" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="7" y="15" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="8" y="15" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="9" y="15" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="10" y="15" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="11" y="15" fill="hsl(0, 0%, 30%)"></rect><rect width="1" height="1" x="12" y="15" fill="hsl(0, 0%, 30%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-hair)"></rect></svg>
+        </div>
+        <div class="pill-button">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="60" height="60" class="clothes-icon"><defs><pattern id="pppixelate-pattern-clothes" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="3" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="16" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="16" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-clothes)"></rect></svg>
+        </div>
+        <div class="pill-button">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="60" height="60" class="accessories-icon"><defs><pattern id="pppixelate-pattern-accessories" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="12" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="15" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-accessories)"></rect></svg>
+        </div>
+        <div class="pill-button">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="60" height="60" class="wardrobe-icon"><defs><pattern id="pppixelate-pattern-wardrobe" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="9" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="4" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="5" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="6" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="13" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="2" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="17" y="14" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="3" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="4" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="5" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="6" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="13" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="14" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="15" y="15" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="16" y="15" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-wardrobe)"></rect></svg>
+        </div>
+    </div>
+
+    <div class="side-panel" id="side-panel">
+        <button class="side-panel-close" id="side-panel-close">
+            <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" width="40" height="40"><defs><pattern id="pppixelate-pattern-close" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(40) rotate(0)" shape-rendering="crispEdges">
+
+    <rect width="1" height="1" x="7" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="7" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="8" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="10" y="9" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="9" y="10" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="8" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="11" y="11" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="7" y="12" fill="hsl(0, 0%, 0%)"></rect><rect width="1" height="1" x="12" y="12" fill="hsl(0, 0%, 0%)"></rect>
+
+  </pattern></defs><rect width="100%" height="100%" fill="url(#pppixelate-pattern-close)"></rect></svg>
+        </button>
+        <div class="side-panel-content">
+            <h2 id="panel-title">Panel</h2>
+            <div class="panel-grid" id="panel-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const FRAME_WIDTH = 64;
+        const FRAME_HEIGHT = 64;
+        const FRONT_FRAME = { col: 0, row: 2 };
+        
+        const ANIMATIONS = {
+            idle: { frames: [0, 1, 2, 3], speed: 500 }
+        };
+        
+        // Simplified spritesheet row order:
+        // Row 0 (index 0): backwards facing
+        // Row 2 (index 1): left side facing
+        // Row 3 (index 2): forward facing
+        // Row 4 (index 3): right side facing
+        const DIRECTIONS = {
+            backwards: 0, // Row 0 (index 0) - backwards facing
+            left: 1,      // Row 2 (index 1) - left side
+            forward: 2,   // Row 3 (index 2) - forward facing
+            right: 3      // Row 4 (index 3) - right side
+        };
+
+        lucide.createIcons();
+        
+        // Recreate icons after DOM is ready to ensure rotate icon is rendered
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
+
+            // Side panel functionality
+            const sidePanel = document.getElementById('side-panel');
+            const panelTitle = document.getElementById('panel-title');
+            const panelGrid = document.getElementById('panel-grid');
+            const pillButtons = document.querySelectorAll('.pill-button');
+
+            function populateGrid(category) {
+                panelGrid.innerHTML = '';
+                
+                if (!window.avatarEditor) return;
+                
+                const editor = window.avatarEditor;
+                let items = [];
+                
+                if (category === 'Body') {
+                    panelGrid.classList.add('body-grid');
+                } else {
+                    panelGrid.classList.remove('body-grid');
+                }
+                
+                if (category === 'Body') {
+                    // Just show skin tones, not gender combinations
+                    const tones = ['pale', 'light', 'medium_light', 'tanned', 'dark', 'very_dark'];
+                    tones.forEach(tone => {
+                        items.push({
+                            key: tone,
+                            label: tone,
+                            type: 'body',
+                            value: tone,
+                            isColorSwatch: true
+                        });
+                    });
+                } else if (category === 'Hair') {
+                    editor.options.hair.forEach(option => {
+                        items.push({
+                            key: option,
+                            label: option,
+                            type: 'hair',
+                            value: option
+                        });
+                    });
+                } else if (category === 'Clothes') {
+                    const genders = ['male', 'female'];
+                    const shirts = ['teal_shirt', 'white_shirt', 'maroon_shirt'];
+                    genders.forEach(gender => {
+                        shirts.forEach(shirt => {
+                            items.push({
+                                key: `${gender}_${shirt}`,
+                                label: `${gender} ${shirt}`,
+                                type: 'torso',
+                                value: shirt,
+                                gender: gender
+                            });
+                        });
+                    });
+                } else if (category === 'Accessories') {
+                    // Placeholder for accessories - can be expanded later
+                    items.push({
+                        key: 'none',
+                        label: 'None',
+                        type: 'accessories',
+                        value: 'none'
+                    });
+                } else if (category === 'Wardrobe') {
+                    // Just show empty grid squares for now
+                    const emptySlots = 12; // Show 12 empty slots
+                    for (let i = 0; i < emptySlots; i++) {
+                        items.push({
+                            key: `empty_${i}`,
+                            label: '',
+                            type: 'empty',
+                            value: null,
+                            isEmpty: true
+                        });
+                    }
+                }
+                
+                items.forEach(item => {
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'grid-item';
+                    gridItem.dataset.key = item.key;
+                    gridItem.dataset.type = item.type;
+                    if (item.value) {
+                        gridItem.dataset.value = item.value;
+                    }
+                    if (item.gender) {
+                        gridItem.dataset.gender = item.gender;
+                    }
+                    
+                    // Handle empty slots (wardrobe)
+                    if (item.isEmpty) {
+                        // Just an empty square, no content
+                        // Check if this item is currently selected
+                        if (isItemSelected(item, editor)) {
+                            gridItem.classList.add('active');
+                        }
+                        
+                        gridItem.addEventListener('click', () => {
+                            // Empty slot, do nothing for now
+                        });
+                        
+                        panelGrid.appendChild(gridItem);
+                        return;
+                    }
+                    
+                    // Handle color swatches (body skin tones)
+                    if (item.isColorSwatch) {
+                        const skinToneColors = {
+                            pale: '#ffe8d1',
+                            light: '#fde6c7',
+                            medium_light: '#fecb96',
+                            tanned: '#f4c2a1',
+                            dark: '#dcb083',
+                            very_dark: '#c0875c'
+                        };
+                        const color = skinToneColors[item.value] || '#CCCCCC';
+                        gridItem.classList.add('color-swatch');
+                        gridItem.style.backgroundColor = color;
+                        
+                        // Check if this item is currently selected
+                        if (isItemSelected(item, editor)) {
+                            gridItem.classList.add('active');
+                        }
+                        
+                        gridItem.addEventListener('click', () => {
+                            selectItem(item, editor);
+                            // Update active state
+                            document.querySelectorAll('.grid-item').forEach(gi => {
+                                gi.classList.remove('active');
+                            });
+                            gridItem.classList.add('active');
+                        });
+                        
+                        panelGrid.appendChild(gridItem);
+                        return;
+                    }
+                    
+                    // Create canvas for preview (hair, clothes, etc.)
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 64;
+                    canvas.height = 64;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    
+                    // Render preview
+                    renderPreview(ctx, item, editor).then(() => {
+                        gridItem.appendChild(canvas);
+                    });
+                    
+                    // Check if this item is currently selected
+                    if (isItemSelected(item, editor)) {
+                        gridItem.classList.add('active');
+                    }
+                    
+                    gridItem.addEventListener('click', () => {
+                        selectItem(item, editor);
+                        // Update active state
+                        document.querySelectorAll('.grid-item').forEach(gi => {
+                            gi.classList.remove('active');
+                        });
+                        gridItem.classList.add('active');
+                    });
+                    
+                    panelGrid.appendChild(gridItem);
+                });
+            }
+            
+            async function renderPreview(ctx, item, editor) {
+                ctx.clearRect(0, 0, 64, 64);
+                
+                if (item.type === 'hair') {
+                    const img = await editor.loadImage(editor.assetManifest.hair[item.value]);
+                    if (img) {
+                        editor.drawFrameForPreview(ctx, img);
+                    }
+                } else if (item.type === 'torso') {
+                    const gender = item.gender || editor.config.gender;
+                    const img = await editor.loadImage(editor.assetManifest.torso[gender][item.value]);
+                    if (img) {
+                        editor.drawFrameForPreview(ctx, img);
+                    }
+                } else if (item.type === 'legs') {
+                    const gender = item.gender || editor.config.gender;
+                    const img = await editor.loadImage(editor.assetManifest.legs[gender][item.value]);
+                    if (img) {
+                        editor.drawFrameForPreview(ctx, img);
+                    }
+                } else if (item.type === 'feet') {
+                    const gender = item.gender || editor.config.gender;
+                    const img = await editor.loadImage(editor.assetManifest.feet[gender][item.value]);
+                    if (img) {
+                        editor.drawFrameForPreview(ctx, img);
+                    }
+                }
+            }
+            
+            function isItemSelected(item, editor) {
+                if (item.type === 'body') {
+                    // For body, just check skin tone
+                    return editor.config.skinTone === item.value;
+                } else if (item.type === 'hair') {
+                    return editor.config.hair === item.value;
+                } else if (item.type === 'torso') {
+                    return editor.config.torso === item.value;
+                } else if (item.type === 'legs') {
+                    return editor.config.legs === item.value;
+                } else if (item.type === 'feet') {
+                    return editor.config.feet === item.value;
+                } else if (item.type === 'empty') {
+                    return false;
+                }
+                return false;
+            }
+            
+            function selectItem(item, editor) {
+                if (item.type === 'body') {
+                    // For body, just update skin tone, keep current gender
+                    editor.config.skinTone = item.value;
+                } else if (item.type === 'hair') {
+                    editor.config.hair = item.value;
+                } else if (item.type === 'torso') {
+                    editor.config.torso = item.value;
+                } else if (item.type === 'legs') {
+                    editor.config.legs = item.value;
+                } else if (item.type === 'feet') {
+                    editor.config.feet = item.value;
+                }
+                editor.render();
+            }
+
+            const avatarContainer = document.querySelector('.avatar-container');
+            const hairDecorations = document.querySelectorAll('.hair-decoration');
+            
+            // Store current rotation angle globally for arrow buttons
+            window.currentAvatarRotation = 0;
+            
+            // Function to rotate avatar by a certain angle
+            function rotateAvatar(angleDelta) {
+                if (!window.avatarEditor) return;
+                
+                const rotateIcon = document.querySelector('.rotate-icon');
+                if (!rotateIcon) return;
+                
+                window.currentAvatarRotation = (window.currentAvatarRotation + angleDelta) % 360;
+                if (window.currentAvatarRotation < 0) window.currentAvatarRotation += 360;
+                
+                // Update rotate icon visual rotation
+                rotateIcon.style.transform = `rotateX(75deg) translateZ(-20px) rotateZ(${window.currentAvatarRotation}deg) scale(1.2)`;
+                
+                // Update avatar direction
+                const direction = window.avatarEditor.angleToDirection(window.currentAvatarRotation);
+                window.avatarEditor.setDirection(direction);
+            }
+            
+            // Add click handlers to rotation arrows
+            const leftArrow = document.querySelector('.hair-decoration.left');
+            const rightArrow = document.querySelector('.hair-decoration.right');
+            
+            if (leftArrow) {
+                leftArrow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    rotateAvatar(90); // Rotate right (clockwise)
+                });
+            }
+            
+            if (rightArrow) {
+                rightArrow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    rotateAvatar(-90); // Rotate left (counter-clockwise)
+                });
+            }
+            
+            pillButtons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    const buttonNames = ['Body', 'Hair', 'Clothes', 'Accessories', 'Wardrobe'];
+                    panelTitle.textContent = buttonNames[index];
+                    populateGrid(buttonNames[index]);
+                    sidePanel.classList.add('open');
+                    
+                    // Zoom to face when hair button is clicked
+                    if (index === 1) { // Hair button is index 1
+                        avatarContainer.classList.add('zoom-face');
+                        // Set avatar to face forward (profile view)
+                        if (window.avatarEditor) {
+                            window.avatarEditor.setDirection(DIRECTIONS.forward);
+                            window.currentAvatarRotation = 0;
+                            const rotateIcon = document.querySelector('.rotate-icon');
+                            if (rotateIcon) {
+                                rotateIcon.style.transform = `rotateX(75deg) translateZ(-20px) rotateZ(0deg) scale(1.2)`;
+                            }
+                        }
+                        // Show hair decorations with slide-in animation
+                        setTimeout(() => {
+                            hairDecorations.forEach(decoration => {
+                                decoration.classList.add('show');
+                            });
+                        }, 100);
+                    } else {
+                        // Zoom out for other buttons
+                        avatarContainer.classList.remove('zoom-face');
+                        // Hide hair decorations
+                        hairDecorations.forEach(decoration => {
+                            decoration.classList.remove('show');
+                        });
+                    }
+                });
+            });
+            
+            // Close button functionality
+            const closeButton = document.getElementById('side-panel-close');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => {
+                    sidePanel.classList.remove('open');
+                    avatarContainer.classList.remove('zoom-face');
+                    // Hide hair decorations
+                    hairDecorations.forEach(decoration => {
+                        decoration.classList.remove('show');
+                    });
+                });
+            }
+        });
+
+        function randomize() {
+            // Spin the icon
+            const iconWrap = document.querySelector('.icon-wrap');
+            if (iconWrap) {
+                iconWrap.style.transform = 'rotate(180deg)';
+                setTimeout(() => {
+                    iconWrap.style.transform = 'rotate(0deg)';
+                }, 500);
+            }
+            
+            if (window.avatarEditor) {
+                window.avatarEditor.randomize();
+            }
+        }
+
+        class PixelAvatarEditor {
+            constructor() {
+                this.canvas = document.getElementById('avatar-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.ctx.imageSmoothingEnabled = false;
+                
+                this.config = {
+                    gender: 'male',
+                    skinTone: 'light',
+                    hair: 'bangs',
+                    torso: 'teal_shirt',
+                    legs: 'teal_pants',
+                    feet: 'black_shoes'
+                };
+                
+                this.options = {
+                    hair: ['bangs', 'long', 'ponytail'],
+                    torso: ['teal_shirt', 'white_shirt', 'maroon_shirt'],
+                    legs: ['teal_pants', 'white_pants', 'red_pants'],
+                    feet: ['black_shoes', 'brown_shoes']
+                };
+                
+                this.assetManifest = {
+                    body: {
+                        male_pale: '../assets/lpc/body/male_pale.png',
+                        male_light: '../assets/lpc/body/male_light.png',
+                        male_medium_light: '../assets/lpc/body/male_medium_light.png',
+                        male_tanned: '../assets/lpc/body/male_tanned.png',
+                        male_dark: '../assets/lpc/body/male_dark.png',
+                        male_very_dark: '../assets/lpc/body/male_very_dark.png',
+                        female_pale: '../assets/lpc/body/female_pale.png',
+                        female_light: '../assets/lpc/body/female_light.png',
+                        female_medium_light: '../assets/lpc/body/female_medium_light.png',
+                        female_tanned: '../assets/lpc/body/female_tanned.png',
+                        female_dark: '../assets/lpc/body/female_dark.png',
+                        female_very_dark: '../assets/lpc/body/female_very_dark.png'
+                    },
+                    hair: {
+                        bangs: '../assets/lpc/hair/bangs.png',
+                        long: '../assets/lpc/hair/long.png',
+                        ponytail: '../assets/lpc/hair/ponytail.png'
+                    },
+                    torso: {
+                        male: {
+                            teal_shirt: '../assets/lpc/torso/male_teal_shirt.png',
+                            white_shirt: '../assets/lpc/torso/male_white_shirt.png',
+                            maroon_shirt: '../assets/lpc/torso/male_maroon_shirt.png'
+                        },
+                        female: {
+                            teal_shirt: '../assets/lpc/torso/female_teal_shirt.png',
+                            white_shirt: '../assets/lpc/torso/female_white_shirt.png',
+                            maroon_shirt: '../assets/lpc/torso/female_maroon_shirt.png'
+                        }
+                    },
+                    legs: {
+                        male: {
+                            teal_pants: '../assets/lpc/legs/male_teal_pants.png',
+                            white_pants: '../assets/lpc/legs/male_white_pants.png',
+                            red_pants: '../assets/lpc/legs/male_red_pants.png'
+                        },
+                        female: {
+                            teal_pants: '../assets/lpc/legs/female_teal_pants.png',
+                            white_pants: '../assets/lpc/legs/female_white_pants.png',
+                            red_pants: '../assets/lpc/legs/female_red_pants.png'
+                        }
+                    },
+                    feet: {
+                        male: {
+                            black_shoes: '../assets/lpc/feet/male_black_shoes.png',
+                            brown_shoes: '../assets/lpc/feet/male_brown_shoes.png'
+                        },
+                        female: {
+                            black_shoes: '../assets/lpc/feet/female_black_shoes.png',
+                            brown_shoes: '../assets/lpc/feet/female_brown_shoes.png'
+                        }
+                    }
+                };
+                
+                this.imageCache = new Map();
+                this.renderOrder = ['body', 'legs', 'feet', 'torso', 'hair'];
+                
+                this.currentAnimation = 'idle';
+                this.currentDirection = DIRECTIONS.forward; // Default to forward facing (row 3, index 2)
+                this.currentFrameIndex = 0;
+                this.flipHorizontal = false; // No longer needed with simplified system
+                
+                this.init();
+            }
+            
+            init() {
+                this.render();
+            }
+            
+            // Simplified rotation: map angles to 4 directions
+            // Backwards (180°): Row 0 (index 0)
+            // Left side (90°): Row 2 (index 1)
+            // Forward (0°): Row 3 (index 2)
+            // Right side (270°): Row 4 (index 3)
+            angleToDirection(iconRotationAngle) {
+                // Normalize angle to 0-360 range
+                let angle = iconRotationAngle % 360;
+                if (angle < 0) angle += 360;
+                
+                // Map angles to simplified directions
+                // Forward: 315°-45° (centered on 0°/360°)
+                // Left: 45°-135° (left side)
+                // Backwards: 135°-225° (backwards facing)
+                // Right: 225°-315° (right side)
+                if (angle >= 315 || angle < 45) {
+                    // Forward facing
+                    this.flipHorizontal = false;
+                    return DIRECTIONS.forward;
+                } else if (angle >= 45 && angle < 135) {
+                    // Left side
+                    this.flipHorizontal = false;
+                    return DIRECTIONS.left;
+                } else if (angle >= 135 && angle < 225) {
+                    // Backwards facing
+                    this.flipHorizontal = false;
+                    return DIRECTIONS.backwards;
+                } else {
+                    // Right side (225°-315°)
+                    this.flipHorizontal = false;
+                    return DIRECTIONS.right;
+                }
+            }
+            
+            setDirection(direction) {
+                this.currentDirection = direction;
+                this.render();
+            }
+            
+            randomize() {
+                // Randomize gender
+                this.config.gender = Math.random() > 0.5 ? 'male' : 'female';
+                
+                // Randomize skin tone
+                const tones = ['pale', 'light', 'medium_light', 'tanned', 'dark', 'very_dark'];
+                this.config.skinTone = tones[Math.floor(Math.random() * tones.length)];
+                
+                // Randomize all parts
+                Object.keys(this.options).forEach(part => {
+                    const options = this.options[part];
+                    this.config[part] = options[Math.floor(Math.random() * options.length)];
+                });
+                
+                this.currentDirection = DIRECTIONS.forward;
+                this.currentFrameIndex = 0;
+                this.flipHorizontal = false;
+                
+                this.render();
+            }
+            
+            async render() {
+                // Clear and reset canvas context completely
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to identity matrix
+                
+                const bodyKey = `${this.config.gender}_${this.config.skinTone}`;
+                await this.drawLayer('body', bodyKey);
+                
+                for (const part of this.renderOrder.filter(p => p !== 'body')) {
+                    const option = this.config[part];
+                    if (!option || option === 'none') continue;
+                    await this.drawLayer(part, option);
+                }
+                
+                // Update profile image with rendered avatar
+                this.updateProfileImage();
+            }
+            
+            updateProfileImage() {
+                const profileImage = document.getElementById('profile-image');
+                if (profileImage && this.canvas) {
+                    try {
+                        // Create a temporary canvas for the headshot crop
+                        const headshotCanvas = document.createElement('canvas');
+                        headshotCanvas.width = 64;
+                        headshotCanvas.height = 40; // Crop to top 40 pixels (head area)
+                        const headshotCtx = headshotCanvas.getContext('2d');
+                        headshotCtx.imageSmoothingEnabled = false;
+                        
+                        // Draw only the top portion (headshot) from the avatar canvas
+                        headshotCtx.drawImage(
+                            this.canvas,
+                            0, 0,           // Source: start from top-left
+                            64, 40,         // Source: width and height to crop
+                            0, 0,           // Destination: start from top-left
+                            64, 40          // Destination: same size
+                        );
+                        
+                        profileImage.src = headshotCanvas.toDataURL('image/png');
+                    } catch (error) {
+                        console.warn('Failed to update profile image:', error);
+                    }
+                }
+            }
+            
+            async drawLayer(part, option) {
+                try {
+                    const img = await this.getLayerImage(part, option);
+                    if (img) {
+                        this.drawFrame(img);
+                    }
+                } catch (error) {
+                    console.error(`Error drawing ${part}:`, error);
+                }
+            }
+            
+            async getLayerImage(part, option) {
+                let path;
+                if (part === 'body') {
+                    path = this.assetManifest.body[option];
+                } else if (part === 'torso' || part === 'legs' || part === 'feet') {
+                    const genderMap = this.assetManifest[part]?.[this.config.gender];
+                    path = genderMap?.[option];
+                } else {
+                    path = this.assetManifest[part]?.[option];
+                }
+                if (!path) return null;
+                return this.loadImage(path);
+            }
+            
+            loadImage(path) {
+                if (this.imageCache.has(path)) {
+                    return Promise.resolve(this.imageCache.get(path));
+                }
+                
+                const promise = new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.imageCache.set(path, img);
+                        resolve(img);
+                    };
+                    img.onerror = () => {
+                        console.warn(`Failed to load: ${path}`);
+                        resolve(null);
+                    };
+                    img.src = path;
+                });
+                
+                return promise;
+            }
+            
+            drawFrame(img) {
+                const animConfig = ANIMATIONS[this.currentAnimation];
+                if (!animConfig || !animConfig.frames || animConfig.frames.length === 0) {
+                    this.drawIdleFrame(img);
+                    return;
+                }
+                
+                const currentRow = this.currentDirection;
+                const safeFrameIndex = Math.max(0, Math.min(this.currentFrameIndex, animConfig.frames.length - 1));
+                const currentCol = animConfig.frames[safeFrameIndex];
+                
+                if (currentCol === undefined || currentCol === null || currentCol < 0 || isNaN(currentCol)) {
+                    this.drawIdleFrame(img);
+                    return;
+                }
+                
+                const sx = currentCol * FRAME_WIDTH;
+                const sy = currentRow * FRAME_HEIGHT;
+                
+                if (sx < 0 || sy < 0 || sx + FRAME_WIDTH > img.width || sy + FRAME_HEIGHT > img.height) {
+                    this.drawIdleFrame(img);
+                    return;
+                }
+                
+                // Simple draw - no flipping needed with simplified system
+                this.ctx.drawImage(img, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+            }
+            
+            drawIdleFrame(img) {
+                const idleConfig = ANIMATIONS['idle'];
+                if (idleConfig && idleConfig.frames && idleConfig.frames.length > 0) {
+                    const fallbackCol = idleConfig.frames[0];
+                    const fallbackSx = fallbackCol * FRAME_WIDTH;
+                    const fallbackSy = this.currentDirection * FRAME_HEIGHT;
+                    if (fallbackSx >= 0 && fallbackSy >= 0 && fallbackSx + FRAME_WIDTH <= img.width && fallbackSy + FRAME_HEIGHT <= img.height) {
+                        this.ctx.drawImage(img, fallbackSx, fallbackSy, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+                    }
+                }
+            }
+            
+            drawFrameForPreview(ctx, img) {
+                // Use forward-facing frame (row 3, index 2, column 0) for previews
+                const previewRow = DIRECTIONS.forward;
+                const previewCol = 0;
+                const sx = previewCol * FRAME_WIDTH;
+                const sy = previewRow * FRAME_HEIGHT;
+                
+                if (sx >= 0 && sy >= 0 && sx + FRAME_WIDTH <= img.width && sy + FRAME_HEIGHT <= img.height) {
+                    ctx.drawImage(img, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, 64, 64);
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            window.avatarEditor = new PixelAvatarEditor();
+            
+            // Rotate icon drag functionality
+            const rotateIcon = document.querySelector('.rotate-icon');
+            if (rotateIcon) {
+                let isDragging = false;
+                // Use global rotation variable if it exists, otherwise start at 0
+                if (typeof window.currentAvatarRotation === 'undefined') {
+                    window.currentAvatarRotation = 0;
+                }
+                let startAngle = 0;
+                let startRotation = 0;
+                const rotationSensitivity = 0.5; // Reduce rotation speed (0.5 = half speed)
+                
+                // Set initial icon rotation to match current rotation
+                rotateIcon.style.transform = `rotateX(75deg) translateZ(-20px) rotateZ(${window.currentAvatarRotation}deg) scale(1.2)`;
+                
+                // Initialize flip state
+                if (window.avatarEditor) {
+                    window.avatarEditor.flipHorizontal = false;
+                }
+                
+                function getAngleFromCenter(e, element) {
+                    const rect = element.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                    const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+                    return angle;
+                }
+                
+                function normalizeAngle(angle) {
+                    // Normalize angle to 0-360 range
+                    angle = angle % 360;
+                    if (angle < 0) angle += 360;
+                    return angle;
+                }
+                
+                function getShortestAngleDelta(start, end) {
+                    // Get the shortest rotation path between two angles
+                    let delta = end - start;
+                    if (delta > 180) delta -= 360;
+                    if (delta < -180) delta += 360;
+                    return delta;
+                }
+                
+                function snapTo45Degrees(angle) {
+                    return Math.round(angle / 45) * 45;
+                }
+                
+                function updateRotation(angle, snap = false) {
+                    const targetAngle = snap ? snapTo45Degrees(angle) : angle;
+                    window.currentAvatarRotation = normalizeAngle(targetAngle);
+                    rotateIcon.style.transform = `rotateX(75deg) translateZ(-20px) rotateZ(${window.currentAvatarRotation}deg) scale(1.2)`;
+                    
+                    // Update player sprite direction based on rotation
+                    if (window.avatarEditor) {
+                        const direction = window.avatarEditor.angleToDirection(window.currentAvatarRotation);
+                        window.avatarEditor.setDirection(direction);
+                    }
+                }
+                
+                function handleStart(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = true;
+                    const angle = getAngleFromCenter(e, rotateIcon);
+                    startAngle = normalizeAngle(angle);
+                    startRotation = window.currentAvatarRotation;
+                    rotateIcon.style.cursor = 'grabbing';
+                    rotateIcon.style.transition = 'none'; // Disable transition during drag
+                    rotateIcon.classList.add('dragging');
+                }
+                
+                function handleMove(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const currentAngle = normalizeAngle(getAngleFromCenter(e, rotateIcon));
+                    const deltaAngle = getShortestAngleDelta(startAngle, currentAngle);
+                    const newRotation = normalizeAngle(startRotation + (deltaAngle * rotationSensitivity));
+                    updateRotation(newRotation, false); // Smooth rotation during drag
+                }
+                
+                function handleEnd(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = false;
+                    rotateIcon.style.cursor = 'grab';
+                    rotateIcon.style.transition = 'transform 0.2s ease'; // Re-enable transition for snap
+                    rotateIcon.classList.remove('dragging');
+                    // Snap to nearest 45 degrees on release
+                    updateRotation(window.currentAvatarRotation, true);
+                }
+                
+                // Mouse events
+                rotateIcon.addEventListener('mousedown', handleStart);
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('mouseup', handleEnd);
+                
+                // Touch events
+                rotateIcon.addEventListener('touchstart', handleStart, { passive: false });
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('touchend', handleEnd);
+                
+                // Initialize direction based on initial rotation
+                if (window.avatarEditor) {
+                    const initialDirection = window.avatarEditor.angleToDirection(window.currentAvatarRotation);
+                    window.avatarEditor.setDirection(initialDirection);
+                }
+            }
+        });
+        
+        // Add error logging
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript error:', e.message, 'at', e.filename, ':', e.lineno);
+        });
+    </script>
+</body>
+</html>
+

@@ -17,7 +17,7 @@ const layoutMarkup = `
         <img class="profile-avatar-icon" src="" alt="Profile" data-avatar style="display: none;">
       </div>
       <button class="shop-btn" id="shop-btn" title="Shop">
-        <img src="iconpack/Png/treasure_chest.png" alt="Shop" class="shop-btn-icon">
+        <img src="${chrome.runtime.getURL('iconpack/Png/treasure_chest.png')}" alt="Shop" class="shop-btn-icon">
         <span class="shop-btn-label">Shop</span>
       </button>
     </div>
@@ -34,8 +34,8 @@ const layoutMarkup = `
       </button>
     </div>
     <div class="div4">
-      <img class="gear gear-1" src="icons/gears/gear1.png" alt="Gear 1">
-      <img class="robot" src="mascot.png" alt="Robot">
+      <img class="gear gear-1" src="${chrome.runtime.getURL('icons/gears/gear1.png')}" alt="Gear 1">
+      <img class="robot" src="${chrome.runtime.getURL('images/mascot.png')}" alt="Robot">
       <span class="title">GAME <span class="maker">MAKER</span></span>
     </div>
   </div>
@@ -97,7 +97,7 @@ document.head.appendChild(fontLink);
 // Load the layout CSS file
 const cssLink = document.createElement('link');
 cssLink.rel = 'stylesheet';
-cssLink.href = 'popup-layout.css';
+cssLink.href = chrome.runtime.getURL('styles/popup-layout.css');
 document.head.appendChild(cssLink);
 
 document.body.innerHTML = layoutMarkup;
@@ -426,7 +426,7 @@ function createTutorialCards() {
     
     const iconName = tutorial.icon.split('/').pop().replace('.png', '');
     card.innerHTML = `
-      <img class="tutorial-card-icon" data-icon="${iconName}" src="${tutorial.icon}" alt="${tutorial.title}">
+      <img class="tutorial-card-icon" data-icon="${iconName}" src="${chrome.runtime.getURL(tutorial.icon)}" alt="${tutorial.title}">
       <div class="tutorial-card-title">${tutorial.title}</div>
     `;
     
@@ -443,7 +443,7 @@ function createTutorialCards() {
     
     const iconName = game.icon.split('/').pop().replace('.png', '');
     card.innerHTML = `
-      <img class="tutorial-card-icon" data-icon="${iconName}" src="${game.icon}" alt="${game.title}">
+      <img class="tutorial-card-icon" data-icon="${iconName}" src="${chrome.runtime.getURL(game.icon)}" alt="${game.title}">
       <div class="tutorial-card-title">${game.title}</div>
     `;
     
@@ -1350,7 +1350,8 @@ function createFallingIcons() {
   function createIcon() {
     const icon = document.createElement('img');
     icon.className = 'falling-icon';
-    icon.src = icons[Math.floor(Math.random() * icons.length)];
+    const iconPath = icons[Math.floor(Math.random() * icons.length)];
+    icon.src = chrome.runtime.getURL(iconPath);
     icon.alt = '';
     
     // Get container dimensions for proper calculation
@@ -1479,7 +1480,7 @@ setTimeout(async () => {
   if (profileSection) {
     profileSection.addEventListener('click', () => {
       if (typeof chrome !== 'undefined' && chrome.runtime) {
-        const profileUrl = chrome.runtime.getURL('profile.html');
+        const profileUrl = chrome.runtime.getURL('pages/profile.html');
         chrome.tabs.create({ url: profileUrl });
       }
     });
@@ -1542,6 +1543,7 @@ setTimeout(async () => {
   // Logo click - open Cadet Hub
   const logoImg = document.getElementById('logo-img');
   if (logoImg) {
+    logoImg.src = chrome.runtime.getURL('images/logo.png');
     logoImg.style.cursor = 'pointer';
     logoImg.addEventListener('click', () => {
       if (typeof chrome !== 'undefined' && chrome.tabs) {

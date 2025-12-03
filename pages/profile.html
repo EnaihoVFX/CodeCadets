@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadet Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #000;
+      --primary: #10B981;
+      --primary-dim: rgba(16, 185, 129, 0.2);
+      --accent: #7C3AED;
+      --accent-dim: rgba(124, 58, 237, 0.2);
+      --gold: #FBBF24;
+      --text-main: #10B981;
+      --text-muted: #7C3AED;
+      --border-color: #334155;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    body {
+      font-family: 'Press Start 2P', cursive;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Background Grid Effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(to right, rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: #000;
+      border-bottom: 4px solid var(--primary);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+      flex-shrink: 0;
+      height: 80px;
+      box-sizing: border-box;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand h1 {
+      font-size: 1.2rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 3px 3px 0px #000, 0 0 10px var(--primary-dim);
+      line-height: 1.5;
+    }
+
+    .back-button {
+      padding: 12px 20px;
+      background: #000;
+      border: 3px solid var(--primary);
+      color: var(--primary);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 0px var(--primary-dim);
+    }
+
+    .back-button:hover {
+      background: var(--primary);
+      color: #000;
+      transform:translateY(-2px);
+      box-shadow: 6px 6px 0px var(--primary-dim);
+    }
+
+    .back-button:active {
+      transform:translateY(0);
+      box-shadow: 2px 2px 0px var(--primary-dim);
+    }
+
+    .sync-button {
+      padding: 12px 24px;
+      background: #000;
+      border: 3px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 0px var(--accent-dim);
+    }
+
+    .sync-button:hover {
+      background: var(--accent);
+      color: #fff;
+      transform:translateY(-2px);
+      box-shadow: 6px 6px 0px var(--accent-dim);
+    }
+    
+    .sync-button.syncing {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    
+    .sync-button.auto-sync-active {
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 4px 4px 0px var(--primary-dim);
+      animation: pulseSync 2s infinite;
+    }
+
+    @keyframes pulseSync {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Main Layout - 3 Column "Hero" Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr 350px;
+      gap: 20px;
+      padding: 20px 30px;
+      max-width: 1800px;
+      margin: 0 auto;
+      width: 100%;
+      height: calc(100vh - 80px); /* Fit viewport minus header */
+      max-height: calc(100vh - 80px);
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    /* Panels */
+    .left-panel, .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 5px; /* Space for scrollbar */
+      height: 100%;
+      max-height: 100%;
+      box-sizing: border-box;
+    }
+
+    .center-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      height: 100%;
+      max-height: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* Common Panel Styles */
+    .panel {
+      background: #000;
+      border: 3px solid var(--primary);
+      padding: 20px;
+      position: relative;
+      box-shadow: 8px 8px 0px rgba(16, 185, 129, 0.15);
+    }
+
+    .panel-accent {
+      border-color: var(--accent);
+      box-shadow: 8px 8px 0px rgba(124, 58, 237, 0.15);
+    }
+
+    .panel-header {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 3px solid var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-accent .panel-header {
+      border-bottom-color: var(--primary);
+    }
+
+    .panel-title {
+      color: var(--accent);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow: 2px 2px 0px #000;
+    }
+
+    .panel-accent .panel-title {
+      color: var(--primary);
+    }
+
+    /* Avatar Section (Center) */
+    .avatar-hero-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+      border: 4px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+      max-height: 100%;
+      box-sizing: border-box;
+      box-shadow: 
+        0 0 30px rgba(16, 185, 129, 0.1),
+        inset 0 0 50px rgba(0,0,0,0.8);
+      
+      /* Cool Floor Grid Pattern */
+      background-image: 
+        linear-gradient(transparent 95%, var(--primary-dim) 95%),
+        linear-gradient(90deg, transparent 95%, var(--primary-dim) 95%);
+      background-size: 40px 40px;
+      perspective: 500px;
+    }
+
+    .avatar-hero-section::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .avatar-full-body {
+      width: 100%;
+      height: auto;
+      max-height: 70%;
+      max-width: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      z-index: 1;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.8));
+      display: none;
+      transition: transform 0.3s ease;
+    }
+    
+    .avatar-full-body:hover {
+      transform: scale(1.05);
+    }
+    
+    .avatar-full-body[src]:not([src=""]):not([src*="robot.png"]) {
+      display: block !important;
+    }
+
+    .hero-controls {
+      position: absolute;
+      bottom: 30px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .customize-btn {
+      padding: 16px 32px;
+      background: #000;
+      border: 3px solid var(--primary);
+      color: var(--primary);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8), 4px 4px 0 var(--primary-dim);
+    }
+
+    .customize-btn:hover {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 0 30px var(--primary-dim);
+      transform: translateY(-4px);
+    }
+
+    /* User Info List (Left) */
+    .user-info-panel {
+      background: #000;
+      border: 3px solid var(--accent);
+      padding: 20px;
+    }
+
+    .user-info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(124, 58, 237, 0.05);
+      border: 2px solid var(--accent-dim);
+    }
+
+    .info-label {
+      color: var(--accent);
+      font-size: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .info-value {
+      color: #fff;
+      font-size: 0.7rem;
+      word-break: break-all;
+    }
+
+    /* Stats Grid (Left) */
+    .profile-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .stat-card {
+      background: #000;
+      padding: 15px;
+      border: 3px solid var(--primary);
+      text-align: center;
+      transition: transform 0.2s;
+      box-shadow: 6px 6px 0px rgba(16, 185, 129, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-card:hover {
+      transform: translateX(4px);
+      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.2);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .stat-label {
+      color: var(--accent);
+      font-size: 0.5rem;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    .stat-value {
+      color: var(--primary);
+      font-size: 1.2rem;
+      text-shadow: 3px 3px 0px #000;
+      line-height: 1.2;
+    }
+
+    /* Achievements (Right) */
+    .achievements-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow-y: auto;
+      max-height: 100%;
+      padding-right: 5px;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #000;
+      border-left: 1px solid var(--border-color);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-dim);
+      border: 1px solid #000;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    .achievement-card,
+    .achievement-item {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
+      border: 2px solid var(--primary-dim);
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .achievement-card:hover,
+    .achievement-item:hover {
+      transform: translateX(-4px);
+      border-color: var(--primary);
+      background: #000;
+      box-shadow: -4px 4px 0px rgba(16, 185, 129, 0.2);
+    }
+
+    .achievement-icon {
+      font-size: 1.5rem;
+      filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.5));
+    }
+    
+    .achievement-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .achievement-details h4,
+    .achievement-name {
+      color: var(--primary);
+      font-size: 0.6rem;
+      margin-bottom: 0;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    .achievement-date {
+      color: var(--accent);
+      font-size: 0.4rem;
+    }
+
+    /* Modal Restyling - Enhanced Avatar Designer */
+    .avatar-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none; /* JS toggles this */
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .avatar-modal-content {
+      background: #000;
+      border: 4px solid var(--primary);
+      box-shadow: 
+        0 0 0 1000px rgba(0,0,0,0.5),
+        0 0 50px rgba(16, 185, 129, 0.3);
+      width: 96%;
+      max-width: 1400px;
+      height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes slideUp {
+      from { 
+        transform: translateY(50px) scale(0.9);
+        opacity: 0;
+      }
+      to { 
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .avatar-modal-header {
+      padding: 20px 30px;
+      border-bottom: 4px solid var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+      position: relative;
+    }
+
+    .avatar-modal-header::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    }
+
+    .avatar-modal-header h2 {
+      color: var(--primary);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      margin: 0;
+      text-shadow: 3px 3px 0px #000, 0 0 15px var(--primary-dim);
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar-modal-close {
+      background: #000;
+      border: 3px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 1.2rem;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 4px 4px 0px rgba(124, 58, 237, 0.2);
+    }
+
+    .avatar-modal-close:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 6px 6px 0px rgba(124, 58, 237, 0.3);
+    }
+
+    .avatar-modal-close:active {
+      transform: translateY(0);
+      box-shadow: 2px 2px 0px rgba(124, 58, 237, 0.2);
+    }
+
+    .avatar-modal-body {
+      flex: 1;
+      padding: 30px;
+      overflow: hidden;
+      background: #0a0a0a;
+      display: flex;
+      gap: 30px;
+    }
+
+    .character-builder-container {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 30px;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Enhanced Preview Section */
+    .character-preview-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      border: 4px solid var(--primary);
+      padding: 30px;
+      position: relative;
+      box-shadow: 
+        inset 0 0 50px rgba(0,0,0,0.8),
+        0 0 30px rgba(16, 185, 129, 0.2);
+      overflow: visible; /* Allow zoomed canvas to overflow for dramatic effect */
+    }
+
+    .character-preview-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(transparent 95%, var(--primary-dim) 95%),
+        linear-gradient(90deg, transparent 95%, var(--primary-dim) 95%);
+      background-size: 30px 30px;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .character-preview-section::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40%;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .character-canvas-container {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      image-rendering: pixelated;
+      position: relative;
+      z-index: 1;
+      overflow: visible; /* Allow zoomed canvas to overflow */
+    }
+    
+    .character-canvas-container canvas {
+       image-rendering: pixelated;
+       image-rendering: -moz-crisp-edges;
+       image-rendering: crisp-edges;
+       filter: drop-shadow(0 10px 30px rgba(0,0,0,0.9));
+       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+       display: block !important;
+       margin: 0 auto;
+       border: 3px solid var(--primary);
+       background: transparent;
+       box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+       transform-origin: center center;
+    }
+
+    .character-canvas-container canvas:hover {
+      filter: drop-shadow(0 15px 40px rgba(0,0,0,0.95));
+    }
+
+    .preview-label {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--primary);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0px #000;
+      z-index: 2;
+      background: rgba(0,0,0,0.8);
+      padding: 10px 20px;
+      border: 3px solid var(--primary);
+      box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .character-customization-section {
+      overflow-y: auto;
+      padding-right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .customization-section {
+      background: #000;
+      border: 3px solid var(--accent);
+      padding: 20px;
+      position: relative;
+    }
+
+    .customization-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+    }
+
+    .customization-header {
+      color: var(--primary);
+      margin-bottom: 20px;
+      font-size: 0.7rem;
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 12px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0px #000;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 15px;
+      justify-content: space-between;
+      background: rgba(124, 58, 237, 0.05);
+      border: 2px solid var(--accent-dim);
+      padding: 12px 15px;
+      transition: all 0.2s;
+    }
+
+    .toggle-group:hover {
+      border-color: var(--accent);
+      background: rgba(124, 58, 237, 0.1);
+    }
+    
+    .toggle-label {
+      color: var(--accent);
+      font-size: 0.6rem;
+      min-width: 120px;
+      text-transform: uppercase;
+    }
+    
+    .toggle-options {
+      display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .toggle-btn {
+        padding: 10px 16px;
+        background: #000;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+      cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 0.5rem;
+      text-transform: uppercase;
+        box-shadow: 3px 3px 0px rgba(124, 58, 237, 0.1);
+    }
+
+    .toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 4px 4px 0px rgba(124, 58, 237, 0.2);
+    }
+    
+    .toggle-btn.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+    }
+
+    .character-parts-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .character-part-selector {
+      background: rgba(16, 185, 129, 0.05);
+      border: 2px solid var(--primary-dim);
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .character-part-selector::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--primary);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .character-part-selector:hover {
+      border-color: var(--primary);
+      background: rgba(16, 185, 129, 0.1);
+      transform: translateX(4px);
+    }
+
+    .character-part-selector:hover::before {
+      opacity: 1;
+    }
+
+    /* Hair Preview Styles */
+    .hair-preview-container {
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(16, 185, 129, 0.05);
+      border: 2px solid var(--primary-dim);
+      border-radius: 8px;
+    }
+
+    .hair-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .hair-preview-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .hair-preview-item:hover {
+      transform: translateY(-3px);
+    }
+
+    .hair-preview-canvas {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    .hair-preview-label {
+      color: var(--accent);
+      font-size: 0.4rem;
+      text-transform: uppercase;
+      text-align: center;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    .part-label {
+        color: var(--primary);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        font-weight: bold;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    .part-controls {
+      display: flex;
+      align-items: center;
+        gap: 12px;
+    }
+
+    .part-btn {
+        width: 36px;
+        height: 36px;
+        background: #000;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+        transition: all 0.2s;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 0.7rem;
+        box-shadow: 3px 3px 0px rgba(124, 58, 237, 0.1);
+    }
+
+    .part-btn:hover {
+        background: var(--accent);
+      color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 4px 4px 0px rgba(124, 58, 237, 0.2);
+    }
+
+    .part-btn:active {
+      transform: translateY(0);
+      box-shadow: 2px 2px 0px rgba(124, 58, 237, 0.1);
+    }
+
+    .part-value {
+        min-width: 120px;
+      text-align: center;
+        color: #fff;
+        font-size: 0.55rem;
+        background: rgba(0,0,0,0.5);
+      padding: 8px 12px;
+        border: 1px solid var(--accent-dim);
+    }
+
+    .color-customization {
+      margin-top: 10px;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .color-picker {
+      display: flex;
+      flex-direction: column;
+        gap: 10px;
+        background: rgba(251, 191, 36, 0.05);
+        padding: 12px;
+        border: 2px solid rgba(251, 191, 36, 0.2);
+        transition: all 0.2s;
+    }
+
+    .color-picker:hover {
+      border-color: var(--gold);
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    .color-picker label {
+        color: var(--gold);
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        text-shadow: 1px 1px 0px #000;
+        font-weight: bold;
+    }
+
+    .color-picker input[type="color"] {
+      width: 100%;
+        height: 50px;
+        border: 3px solid #fff;
+      background: transparent;
+      cursor: pointer;
+        padding: 2px;
+        box-shadow: 3px 3px 0px rgba(255,255,255,0.1);
+        transition: all 0.2s;
+    }
+
+    .color-picker input[type="color"]:hover {
+      box-shadow: 4px 4px 0px rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .avatar-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      padding: 20px 30px;
+      border-top: 4px solid var(--primary);
+      background: #000;
+    }
+
+    .avatar-save-btn {
+      padding: 15px 30px;
+      background: var(--primary);
+      color: #000;
+      border: 3px solid var(--primary);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+    }
+    
+    .avatar-save-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 6px 6px 0px rgba(0,0,0,0.5);
+        filter: brightness(1.1);
+    }
+
+    .avatar-reset-btn {
+      padding: 15px 30px;
+      background: #000;
+      border: 3px solid #ef4444;
+      color: #ef4444;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .avatar-reset-btn:hover {
+        background: #ef4444;
+      color: #fff;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1100px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: 
+          "center center"
+          "left right";
+        height: auto;
+      }
+      
+      .center-panel {
+        grid-area: center;
+        min-height: 500px;
+      }
+      
+      .left-panel {
+        grid-area: left;
+      }
+      
+      .right-panel {
+        grid-area: right;
+      }
+
+      .avatar-modal-content {
+        width: 98%;
+        height: 95vh;
+      }
+
+      .character-builder-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .character-preview-section {
+        min-height: 400px;
+      }
+
+      .character-canvas-container {
+        min-height: 350px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: 
+          "center"
+          "left"
+          "right";
+        padding: 20px;
+      }
+      
+      .character-builder-container {
+        grid-template-columns: 1fr;
+      }
+
+      .avatar-modal-body {
+        padding: 15px;
+      }
+
+      .customization-section {
+        padding: 15px;
+      }
+
+      .color-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="header">
+    <div class="brand">
+      <a href="javascript:window.close()" class="back-button">← BACK</a>
+      <h1>Cadet Profile</h1>
+    </div>
+    <button class="sync-button" id="sync-button" title="Sync with remote database">
+      <span>SYNC DATA</span>
+      </button>
+  </header>
+
+  <main class="dashboard-grid">
+    
+    <!-- LEFT COLUMN: Stats & Info -->
+    <div class="left-panel">
+      <!-- User Info Panel -->
+      <div class="panel user-info-panel" style="display: flex; flex-direction: column; overflow: hidden;">
+        <div class="panel-header" style="flex-shrink: 0;">
+          <span class="panel-title">👤 About You</span>
+        </div>
+        <div class="user-info-list" id="user-info-section" style="flex: 1; min-height: 0; overflow-y: auto;">
+          <div class="info-item">
+            <span class="info-label">👤 Name</span>
+            <span class="info-value" id="user-username">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">🎓 Role</span>
+            <span class="info-value" id="user-role">-</span>
+          </div>
+          <div class="info-item" style="display:none;"> 
+            <span class="info-label">Email</span>
+            <span class="info-value" id="user-email">-</span>
+          </div>
+        </div>
+        <div id="welcome-message" style="display: none;"><p></p></div>
+    </div>
+    
+      <!-- Stats Panel -->
+      <div class="panel" style="display: flex; flex-direction: column; overflow: hidden;">
+        <div class="panel-header" style="flex-shrink: 0;">
+          <span class="panel-title">⭐ Your Stats</span>
+        </div>
+        <div class="profile-stats" id="profile-stats" style="flex: 1; min-height: 0; overflow-y: auto;">
+            <!-- JS will populate this -->
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER COLUMN: Huge Avatar (Hero) -->
+    <div class="center-panel">
+      <div class="avatar-hero-section">
+        <img class="avatar-full-body" src="" alt="Your Avatar" id="avatar-image">
+        <div class="hero-controls">
+          <button class="customize-btn" id="customize-avatar-btn">
+            <span>🎨 Create Your Character</span>
+          </button>
+          </div>
+        </div>
+      </div>
+      
+    <!-- RIGHT COLUMN: Achievements -->
+    <div class="right-panel">
+      <div class="panel panel-accent" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="panel-header" style="flex-shrink: 0;">
+          <span class="panel-title">🏆 Your Badges</span>
+        </div>
+        
+        <div class="achievements-container" id="achievements-list" style="flex: 1; min-height: 0;">
+           <!-- JS populates this -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </main>
+
+  <!-- Hidden Elements for JS Compatibility -->
+  <div id="avatar-modal" class="avatar-modal">
+    <div class="avatar-modal-content">
+      <div class="avatar-modal-header">
+        <h2>🎨 CREATE YOUR CHARACTER</h2>
+        <button class="avatar-modal-close" id="avatar-modal-close">✕</button>
+      </div>
+      
+      <div class="avatar-modal-body">
+        <div class="character-builder-container">
+          <div class="character-preview-section">
+            <div id="character-canvas-container" class="character-canvas-container"></div>
+            <div class="preview-label">👀 YOUR CHARACTER</div>
+          </div>
+          
+          <div class="character-customization-section">
+            <!-- Body Parameters Section -->
+            <div class="customization-section">
+              <div class="customization-header">👤 WHO ARE YOU?</div>
+            <div class="body-customization">
+              <div class="toggle-group" id="gender-toggle">
+                  <div class="toggle-label">BOY OR GIRL?</div>
+                <div class="toggle-options"></div>
+              </div>
+              <div class="toggle-group" id="skin-toggle">
+                  <div class="toggle-label">SKIN COLOR</div>
+                <div class="toggle-options"></div>
+              </div>
+            </div>
+            </div>
+            
+            <!-- Equipment Section -->
+            <div class="customization-section">
+              <div class="customization-header">👕 YOUR STYLE</div>
+            <div id="character-parts-selector" class="character-parts-selector"></div>
+            </div>
+            
+            <!-- Colors Section -->
+            <div class="customization-section" id="color-customization">
+              <div class="customization-header">🎨 PICK COLORS</div>
+              <div class="color-grid">
+                <div class="color-picker">
+                  <label for="color-hair">💇 HAIR COLOR</label>
+                  <input type="color" id="color-hair" data-color-part="hair" value="#5a3825">
+                </div>
+                <div class="color-picker">
+                  <label for="color-shirt">👕 TOP COLOR</label>
+                  <input type="color" id="color-shirt" data-color-part="shirt" value="#34d399">
+                </div>
+                <div class="color-picker">
+                  <label for="color-pants">👖 BOTTOM COLOR</label>
+                  <input type="color" id="color-pants" data-color-part="pants" value="#2563eb">
+                </div>
+                <div class="color-picker">
+                  <label for="color-shoes">👟 SHOES COLOR</label>
+                  <input type="color" id="color-shoes" data-color-part="shoes" value="#1f2937">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+        <div class="avatar-actions">
+        <button class="avatar-reset-btn" id="avatar-reset-btn">🔄 START OVER</button>
+        <button class="avatar-save-btn" id="avatar-save-btn">💾 SAVE MY CHARACTER</button>
+        </div>
+      
+      <div class="avatar-credits" style="display:none;">
+          <p>Art from <a href="https://github.com/makrohn/Universal-LPC-spritesheet">Universal LPC Spritesheet</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../scripts/services/database-service.js"></script>
+  <script src="../config/supabase-config.js"></script>
+  <script src="../scripts/avatar/avatar-utils.js"></script>
+  <script src="../scripts/avatar/lpc-integration.js"></script>
+  <script src="../scripts/avatar/character-builder.js"></script>
+  <script src="../scripts/avatar/avatar-customizer.js"></script>
+  
+  <!-- Main Logic - Using profile.js to ensure real data loading -->
+  <script src="../scripts/pages/profile.js"></script>
+  
+  <!-- Extra visual flair script -->
+  <script>
+      // Check if page is opened as file:// and warn user
+      if (window.location.protocol === 'file:') {
+          console.error('⚠️ Profile page opened as file:// - images will not load due to CORS restrictions.');
+          console.error('💡 Please open this page through the extension by clicking the profile icon in the popup.');
+          // Show a warning banner
+          const warning = document.createElement('div');
+          warning.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: #ef4444; color: #fff; padding: 15px; text-align: center; z-index: 10000; font-family: "Press Start 2P", cursive; font-size: 0.6rem;';
+          warning.textContent = '⚠️ Please open this page through the extension (click profile icon in popup) for images to work!';
+          document.body.insertBefore(warning, document.body.firstChild);
+      }
+
+      // Ensure character builder initializes when modal opens
+      document.addEventListener('DOMContentLoaded', () => {
+          const customizeBtn = document.getElementById('customize-avatar-btn');
+          if (customizeBtn) {
+              customizeBtn.addEventListener('click', () => {
+                  // Wait a bit for modal to be visible, then initialize
+                  setTimeout(async () => {
+                      if (typeof initializeCharacterBuilder === 'function') {
+                          console.log('[Profile V2] Initializing character builder...');
+                          await initializeCharacterBuilder();
+                          console.log('[Profile V2] Character builder initialized');
+                      } else {
+                          console.error('[Profile V2] initializeCharacterBuilder function not found!');
+                      }
+                  }, 200);
+              });
+          }
+      });
+
+      const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+              if (mutation.addedNodes.length) {
+                  // Style the achievements to match our grid
+                  const achievements = document.querySelectorAll('.achievement-item');
+                  achievements.forEach(item => {
+                      item.className = 'achievement-card'; 
+                  });
+              }
+          });
+      });
+      
+      const statsContainer = document.getElementById('profile-stats');
+      if (statsContainer) {
+          observer.observe(statsContainer, { childList: true });
+      }
+      
+      const achList = document.getElementById('achievements-list');
+      if (achList) {
+          observer.observe(achList, { childList: true });
+      }
+  </script>
+</body>
+</html>

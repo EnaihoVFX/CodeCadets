@@ -22,7 +22,7 @@
     "https://liberatedpixelcup.github.io/*"
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup.html",
     "default_title": "Cadet Help",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -36,7 +36,7 @@
     "128": "icons/icon128.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "scripts/core/background.js"
   },
   "content_scripts": [
     {
@@ -44,7 +44,7 @@
         "https://scratch.mit.edu/*",
         "https://projects.scratch.mit.edu/*"
       ],
-      "js": ["selector-map.js", "content.js"],
+      "js": ["scripts/data/selector-map.js", "scripts/core/content.js"],
       "all_frames": true,
       "run_at": "document_idle"
     },
@@ -53,14 +53,14 @@
         "https://code-cadets.getlearnworlds.com/*",
         "https://*.getlearnworlds.com/*"
       ],
-      "js": ["learnworlds-user.js"],
+      "js": ["scripts/services/learnworlds-user.js"],
       "all_frames": false,
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["selector-map.json", "mascot.png", "logo.png", "icons/robot.png", "icons/logo/icon.png", "profile.html", "profile_v2.html", "profile.js", "profile_v2.js", "database-service.js", "avatar-utils.js", "lpc-integration.js", "character-builder.js", "avatar-customizer.js", "vendor/jszip.min.js", "iconpack/Png/star.png", "assets/lpc/*"],
+      "resources": ["data/selector-map.json", "images/mascot.png", "images/logo.png", "icons/robot.png", "icons/logo/icon.png", "pages/profile.html", "scripts/pages/profile.js", "scripts/services/database-service.js", "scripts/avatar/avatar-utils.js", "scripts/avatar/lpc-integration.js", "scripts/avatar/character-builder.js", "scripts/avatar/avatar-customizer.js", "vendor/jszip.min.js", "iconpack/Png/star.png", "assets/lpc/*"],
       "matches": ["https://scratch.mit.edu/*", "https://projects.scratch.mit.edu/*"]
     }
   ]

@@ -73,10 +73,6 @@ function closeAvatarModal() {
   if (modal) {
     modal.style.display = 'none';
     document.body.style.overflow = '';
-    // Stop character animation when modal closes
-    if (typeof cleanupCharacterBuilder === 'function') {
-      cleanupCharacterBuilder();
-    }
   }
 }
 
