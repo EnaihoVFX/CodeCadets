@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Creator - Light Mode</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            /* Light Mode Palette */
+            --bg-page: #f1f5f9;       /* Light Slate */
+            --bg-panel-right: #ffffff; /* Pure White */
+            --bg-panel-left: #e2e8f0;  /* Darker Slate for contrast */
+            --border-color: #cbd5e1;
+            
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            
+            --accent-blue: #3b82f6;
+            --accent-gold: #eab308;
+            
+            --btn-shadow: #94a3b8; /* Shadow color for the 3D button */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-page);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- LOADING SCREEN --- */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-icon {
+            width: 50px;
+            height: 50px;
+            animation: bounce 0.7s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+            filter: brightness(1.15) contrast(1.05);
+        }
+
+        .loading-shadow {
+            width: 40px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 50%;
+            margin-top: 15px;
+            filter: blur(3px);
+            animation: shadowPulse 0.7s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0) scaleY(1);
+            }
+            30% {
+                transform: translateY(-25px) scaleY(0.95);
+            }
+            50% {
+                transform: translateY(-25px) scaleY(0.95);
+            }
+            70% {
+                transform: translateY(0) scaleY(1.05);
+            }
+            85% {
+                transform: translateY(-3px) scaleY(0.98);
+            }
+            100% {
+                transform: translateY(0) scaleY(1);
+            }
+        }
+
+        @keyframes shadowPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.25;
+            }
+            30% {
+                transform: scale(0.8);
+                opacity: 0.15;
+            }
+            50% {
+                transform: scale(0.8);
+                opacity: 0.15;
+            }
+            70% {
+                transform: scale(1);
+                opacity: 0.25;
+            }
+            85% {
+                transform: scale(0.95);
+                opacity: 0.22;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.25;
+            }
+        }
+
+        /* --- HEADER AREA (Toggle + Coins) --- */
+        .header-bar {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 4px;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 8px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        .toggle-btn.active {
+            background-color: #eff6ff; /* Very light blue */
+            color: var(--accent-blue);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .toggle-btn:hover:not(.active) {
+            background-color: #f8fafc;
+            color: var(--text-primary);
+        }
+
+        /* Coins Badge */
+        .coins-display {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .coin-icon {
+            color: var(--accent-gold);
+            fill: var(--accent-gold);
+        }
+
+        /* --- MAIN CARD --- */
+        .card {
+            display: flex;
+            width: 800px;
+            max-width: 90vw;
+            height: 480px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0,0,0,0.05); /* Subtle outline */
+        }
+
+        /* --- LEFT PANEL (Preview) --- */
+        .panel-left {
+            width: 50%;
+            background-color: var(--bg-panel-left);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: inset -1px 0 0 rgba(0,0,0,0.05); 
+        }
+
+        /* Pixel Art Container */
+        .pixel-char-container {
+            position: relative;
+            margin-bottom: 50px;
+            display: flex;
+            justify-content: center;
+            transform: scale(1.8) translateY(-40px);
+            transform-origin: center top;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pixel-char-container.zoom-head {
+            transform: scale(4.5) translateY(-50px);
+        }
+
+        .pixel-char {
+            width: 180px;
+            height: 180px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            z-index: 2;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            transition: opacity 0.3s ease;
+        }
+
+        .shadow {
+            position: absolute;
+            bottom: 2px;
+            width: 120px;
+            height: 16px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 50%;
+            z-index: 1;
+            filter: blur(2px);
+        }
+
+        /* Random Button - LIGHT MODE VERSION */
+        .btn-random {
+            position: absolute;
+            bottom: 40px;
+            background-color: #ffffff; /* White background */
+            border: 1px solid var(--border-color);
+            border-bottom: 4px solid var(--btn-shadow); /* The 3D effect color */
+            border-radius: 8px;
+            padding: 10px 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .btn-random:hover {
+            background-color: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .btn-random:active {
+            border-bottom-width: 0px; /* Collapse the 3D border */
+            transform: translateY(4px); /* Move down */
+            margin-bottom: 4px; /* Maintain layout */
+        }
+
+        .btn-random span {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: none;
+            font-weight: 600;
+        }
+        
+        /* Debug Panel */
+        .debug-panel {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 80vh;
+            overflow-y: auto;
+            cursor: default;
+            user-select: none;
+        }
+
+        .debug-panel.dragging {
+            cursor: grabbing;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: grab;
+        }
+
+        .debug-header:active {
+            cursor: grabbing;
+        }
+
+        .debug-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .debug-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .debug-close:hover {
+            color: var(--text-primary);
+        }
+
+        .debug-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .debug-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .debug-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .debug-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .debug-btn {
+            padding: 6px 12px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .debug-btn:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .debug-btn:active {
+            background: #cbd5e1;
+        }
+
+        .debug-info {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .debug-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            z-index: 999;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .debug-toggle:hover {
+            background: #2563eb;
+        }
+        
+        .btn-random .icon-wrap {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        /* Debug Panel */
+        .debug-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            z-index: 999;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .debug-toggle:hover {
+            background: #2563eb;
+        }
+
+        .debug-panel {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .debug-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .debug-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .debug-close:hover {
+            color: var(--text-primary);
+        }
+
+        .debug-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .debug-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .debug-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .debug-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .debug-btn {
+            padding: 6px 12px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .debug-btn:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .debug-btn:active {
+            background: #cbd5e1;
+        }
+
+        .debug-info {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* --- RIGHT PANEL --- */
+        .panel-right {
+            width: 50%;
+            background-color: var(--bg-panel-right);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border-color);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            height: 70px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: flex-end;
+            padding: 0 20px;
+        }
+
+        .tab {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding-bottom: 20px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background-color: var(--accent-blue);
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+            transform: translateX(-50%);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab:hover { color: var(--text-secondary); }
+        .tab.active { color: var(--accent-blue); }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        /* Controls */
+        .controls {
+            padding: 30px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .swatch.selected {
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--accent-blue);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        /* Part Controls */
+        .part-controls {
+            margin-top: 20px;
+        }
+
+        .part-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .part-row:last-child {
+            border-bottom: none;
+        }
+
+        .part-label {
+            color: var(--text-dark);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .part-arrows {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .arrow-btn {
+            width: 32px;
+            height: 32px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-dark);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .arrow-btn:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        .arrow-btn:active {
+            transform: scale(0.95);
+        }
+
+        .part-value {
+            min-width: 100px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .customization-section {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .customization-section.hiding {
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+
+        .customization-section.hidden {
+            display: none;
+        }
+
+        .customization-section.showing {
+            opacity: 0;
+            transform: translateY(-10px);
+            animation: fadeInUp 0.3s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Hair Grid */
+        .hair-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .hair-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            aspect-ratio: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .hair-option.empty {
+            border: 2px solid #e2e8f0;
+            background: transparent;
+            cursor: default;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .hair-option.empty .hair-preview-canvas {
+            display: none;
+        }
+
+        .hair-option:hover:not(.empty) {
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .hair-option.selected {
+            border-color: var(--accent-blue);
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
+
+        .hair-preview-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        /* Clothing Grid */
+        .clothing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .clothing-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            aspect-ratio: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .clothing-option.empty {
+            border: 2px solid #e2e8f0;
+            background: transparent;
+            cursor: default;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .clothing-option.empty .clothing-preview-canvas {
+            display: none;
+        }
+
+        .clothing-option:hover:not(.empty) {
+            border-color: #94a3b8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .clothing-option.selected {
+            border-color: var(--accent-blue);
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
+
+        .clothing-preview-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-container">
+            <img src="../../icons/logo/icon.png" alt="CodeCadets" class="loading-icon">
+            <div class="loading-shadow"></div>
+        </div>
+    </div>
+
+    <div class="header-bar">
+        <div class="toggle-container">
+            <button class="toggle-btn active" id="btn-boy" onclick="setGender('male')">Boy</button>
+            <button class="toggle-btn" id="btn-girl" onclick="setGender('female')">Girl</button>
+        </div>
+
+        <div class="coins-display">
+            <i data-lucide="coins" class="coin-icon" width="16" height="16"></i>
+            <span>1,250</span>
+        </div>
+    </div>
+
+    <div class="card">
+        
+        <div class="panel-left">
+            <div class="pixel-char-container" data-direction="front">
+                <canvas id="avatar-canvas" class="pixel-char" width="64" height="64"></canvas>
+                <div class="shadow"></div>
+            </div>
+
+            <!-- Debug Panel - REMOVED -->
+            <div class="debug-panel" id="debug-panel" style="display: none !important;">
+                <div class="debug-header">
+                    <span class="debug-title">Animation Debug</span>
+                    <button class="debug-close" onclick="toggleDebugPanel()">×</button>
+                </div>
+                <div class="debug-content">
+                    <div class="debug-section">
+                        <span class="debug-label">Animation:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="testAnimation('idle')">Idle (0-3)</button>
+                            <button class="debug-btn" onclick="testAnimation('walk')">Walk (4-7)</button>
+                            <button class="debug-btn" onclick="testAnimation('attack')" style="opacity: 0.5;" title="May not exist">Attack (8-11)</button>
+                            <button class="debug-btn" onclick="testAnimation('cast')" style="opacity: 0.5;" title="May not exist">Cast (12-15)</button>
+                            <button class="debug-btn" onclick="testAnimation('thrust')" style="opacity: 0.5;" title="May not exist">Thrust (16-19)</button>
+                            <button class="debug-btn" onclick="testAnimation('slash')" style="opacity: 0.5;" title="May not exist">Slash (20-23)</button>
+                            <button class="debug-btn" onclick="testAnimation('shoot')" style="opacity: 0.5;" title="May not exist">Shoot (24-27)</button>
+                            <button class="debug-btn" onclick="testAnimation('spell')" style="opacity: 0.5;" title="May not exist">Spell (28-31)</button>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <span class="debug-label">Direction:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="testDirection('down')">Down</button>
+                            <button class="debug-btn" onclick="testDirection('left')">Left</button>
+                            <button class="debug-btn" onclick="testDirection('right')">Right</button>
+                            <button class="debug-btn" onclick="testDirection('up')">Up</button>
+                            <button class="debug-btn" onclick="testDirection('downLeft')">DL</button>
+                            <button class="debug-btn" onclick="testDirection('downRight')">DR</button>
+                            <button class="debug-btn" onclick="testDirection('upLeft')">UL</button>
+                            <button class="debug-btn" onclick="testDirection('upRight')">UR</button>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <span class="debug-label">Frame:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="testFrame(0)">0</button>
+                            <button class="debug-btn" onclick="testFrame(1)">1</button>
+                            <button class="debug-btn" onclick="testFrame(2)">2</button>
+                            <button class="debug-btn" onclick="testFrame(3)">3</button>
+                            <button class="debug-btn" onclick="testFrame(4)">4</button>
+                            <button class="debug-btn" onclick="testFrame(5)">5</button>
+                            <button class="debug-btn" onclick="testFrame(6)">6</button>
+                            <button class="debug-btn" onclick="testFrame(7)">7</button>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <span class="debug-label">Actions:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="stopAnimation()">Stop</button>
+                            <button class="debug-btn" onclick="startAnimation()">Start</button>
+                            <button class="debug-btn" onclick="nextFrame()">Next Frame</button>
+                            <button class="debug-btn" onclick="prevFrame()">Prev Frame</button>
+                        </div>
+                    </div>
+                    <div class="debug-info" id="debug-info">
+                        <div>Current: <span id="debug-current">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Debug Panel - REMOVED -->
+            <div class="debug-panel" id="debug-panel" style="display: none !important;">
+                <div class="debug-header">
+                    <span class="debug-title">Animation Debug</span>
+                    <button class="debug-close" onclick="toggleDebugPanel()">×</button>
+                </div>
+                <div class="debug-content">
+                    <div class="debug-section">
+                        <span class="debug-label">Animation:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="testAnimation('idle')">Idle (0-3)</button>
+                            <button class="debug-btn" onclick="testAnimation('walk')">Walk (4-7)</button>
+                            <button class="debug-btn" onclick="testAnimation('attack')" style="opacity: 0.5;" title="May not exist">Attack (8-11)</button>
+                            <button class="debug-btn" onclick="testAnimation('cast')" style="opacity: 0.5;" title="May not exist">Cast (12-15)</button>
+                            <button class="debug-btn" onclick="testAnimation('thrust')" style="opacity: 0.5;" title="May not exist">Thrust (16-19)</button>
+                            <button class="debug-btn" onclick="testAnimation('slash')" style="opacity: 0.5;" title="May not exist">Slash (20-23)</button>
+                            <button class="debug-btn" onclick="testAnimation('shoot')" style="opacity: 0.5;" title="May not exist">Shoot (24-27)</button>
+                            <button class="debug-btn" onclick="testAnimation('spell')" style="opacity: 0.5;" title="May not exist">Spell (28-31)</button>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <span class="debug-label">Direction:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="testDirection('down')">Down</button>
+                            <button class="debug-btn" onclick="testDirection('left')">Left</button>
+                            <button class="debug-btn" onclick="testDirection('right')">Right</button>
+                            <button class="debug-btn" onclick="testDirection('up')">Up</button>
+                            <button class="debug-btn" onclick="testDirection('downLeft')">DL</button>
+                            <button class="debug-btn" onclick="testDirection('downRight')">DR</button>
+                            <button class="debug-btn" onclick="testDirection('upLeft')">UL</button>
+                            <button class="debug-btn" onclick="testDirection('upRight')">UR</button>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <span class="debug-label">Frame:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="testFrame(0)">0</button>
+                            <button class="debug-btn" onclick="testFrame(1)">1</button>
+                            <button class="debug-btn" onclick="testFrame(2)">2</button>
+                            <button class="debug-btn" onclick="testFrame(3)">3</button>
+                            <button class="debug-btn" onclick="testFrame(4)">4</button>
+                            <button class="debug-btn" onclick="testFrame(5)">5</button>
+                            <button class="debug-btn" onclick="testFrame(6)">6</button>
+                            <button class="debug-btn" onclick="testFrame(7)">7</button>
+                        </div>
+                    </div>
+                    <div class="debug-section">
+                        <span class="debug-label">Actions:</span>
+                        <div class="debug-buttons">
+                            <button class="debug-btn" onclick="stopAnimation()">Stop</button>
+                            <button class="debug-btn" onclick="startAnimation()">Start</button>
+                            <button class="debug-btn" onclick="nextFrame()">Next Frame</button>
+                            <button class="debug-btn" onclick="prevFrame()">Prev Frame</button>
+                        </div>
+                    </div>
+                    <div class="debug-info" id="debug-info">
+                        <div>Current: <span id="debug-current">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-random" onclick="randomize()">
+                <div class="icon-wrap">
+                    <i data-lucide="refresh-cw" width="18" height="18"></i>
+                </div>
+                <span>Random</span>
+            </button>
+        </div>
+
+        <div class="panel-right">
+            
+            <div class="tabs">
+                <button class="tab active" onclick="selectTab(this, 'character')">
+                    <i data-lucide="user" width="24" height="24"></i>
+                </button>
+                <button class="tab" onclick="selectTab(this, 'hair')">
+                    <i data-lucide="smile" width="24" height="24"></i>
+                </button>
+                <button class="tab" onclick="selectTab(this, 'clothing')">
+                    <i data-lucide="shirt" width="24" height="24"></i>
+                </button>
+                <button class="tab" onclick="selectTab(this, 'accessories')">
+                    <i data-lucide="grid" width="24" height="24"></i>
+                </button>
+            </div>
+
+            <div class="controls">
+                <div id="character-section" class="customization-section" style="display: block;">
+                    <div class="grid">
+                        <div class="swatch selected" style="background-color: #ffe8d1;" onclick="selectSkinTone(this, 'pale')"></div>
+                        <div class="swatch" style="background-color: #fde6c7;" onclick="selectSkinTone(this, 'light')"></div>
+                        <div class="swatch" style="background-color: #fecb96;" onclick="selectSkinTone(this, 'light')"></div>
+                        <div class="swatch" style="background-color: #f4c2a1;" onclick="selectSkinTone(this, 'medium_light')"></div>
+                        <div class="swatch" style="background-color: #dcb083;" onclick="selectSkinTone(this, 'tanned')"></div>
+                        
+                        <div class="swatch" style="background-color: #c0875c;" onclick="selectSkinTone(this, 'tanned')"></div>
+                        <div class="swatch" style="background-color: #aa6b51;" onclick="selectSkinTone(this, 'tanned')"></div>
+                        <div class="swatch" style="background-color: #b56a47;" onclick="selectSkinTone(this, 'dark')"></div>
+                        <div class="swatch" style="background-color: #8b4e3d;" onclick="selectSkinTone(this, 'dark')"></div>
+                        
+                        <div class="swatch" style="background-color: #553630;" onclick="selectSkinTone(this, 'dark')"></div>
+                        <div class="swatch" style="background-color: #3d2819;" onclick="selectSkinTone(this, 'very_dark')"></div>
+                        <div class="swatch" style="background-color: transparent; border:none; cursor:default;"></div>
+                    </div>
+                </div>
+
+                <div id="hair-section" class="customization-section" style="display: none;">
+                    <div class="hair-grid" id="hair-grid">
+                        <div class="hair-option selected" data-hair="bangs" onclick="selectHair(this, 'bangs')">
+                            <canvas class="hair-preview-canvas" data-hair-type="bangs"></canvas>
+                        </div>
+                        <div class="hair-option" data-hair="long" onclick="selectHair(this, 'long')">
+                            <canvas class="hair-preview-canvas" data-hair-type="long"></canvas>
+                        </div>
+                        <div class="hair-option" data-hair="ponytail" onclick="selectHair(this, 'ponytail')">
+                            <canvas class="hair-preview-canvas" data-hair-type="ponytail"></canvas>
+                        </div>
+                        <div class="hair-option empty"></div>
+                    </div>
+                </div>
+
+                <div id="clothing-section" class="customization-section" style="display: none;">
+                    <div class="clothing-grid" id="torso-grid">
+                        <div class="clothing-option selected" data-clothing="torso" data-option="teal_shirt" onclick="selectClothing(this, 'torso', 'teal_shirt')">
+                            <canvas class="clothing-preview-canvas" data-clothing="torso" data-option="teal_shirt"></canvas>
+                            </div>
+                        <div class="clothing-option" data-clothing="torso" data-option="white_shirt" onclick="selectClothing(this, 'torso', 'white_shirt')">
+                            <canvas class="clothing-preview-canvas" data-clothing="torso" data-option="white_shirt"></canvas>
+                        </div>
+                        <div class="clothing-option" data-clothing="torso" data-option="maroon_shirt" onclick="selectClothing(this, 'torso', 'maroon_shirt')">
+                            <canvas class="clothing-preview-canvas" data-clothing="torso" data-option="maroon_shirt"></canvas>
+                            </div>
+                        <div class="clothing-option empty"></div>
+                        </div>
+                    
+                    <div class="clothing-grid" id="legs-grid" style="margin-top: 30px;">
+                        <div class="clothing-option selected" data-clothing="legs" data-option="teal_pants" onclick="selectClothing(this, 'legs', 'teal_pants')">
+                            <canvas class="clothing-preview-canvas" data-clothing="legs" data-option="teal_pants"></canvas>
+                            </div>
+                        <div class="clothing-option" data-clothing="legs" data-option="white_pants" onclick="selectClothing(this, 'legs', 'white_pants')">
+                            <canvas class="clothing-preview-canvas" data-clothing="legs" data-option="white_pants"></canvas>
+                        </div>
+                        <div class="clothing-option" data-clothing="legs" data-option="red_pants" onclick="selectClothing(this, 'legs', 'red_pants')">
+                            <canvas class="clothing-preview-canvas" data-clothing="legs" data-option="red_pants"></canvas>
+                        </div>
+                        <div class="clothing-option empty"></div>
+                    </div>
+                    
+                    <div class="clothing-grid" id="feet-grid" style="margin-top: 30px;">
+                        <div class="clothing-option selected" data-clothing="feet" data-option="black_shoes" onclick="selectClothing(this, 'feet', 'black_shoes')">
+                            <canvas class="clothing-preview-canvas" data-clothing="feet" data-option="black_shoes"></canvas>
+                        </div>
+                        <div class="clothing-option" data-clothing="feet" data-option="brown_shoes" onclick="selectClothing(this, 'feet', 'brown_shoes')">
+                            <canvas class="clothing-preview-canvas" data-clothing="feet" data-option="brown_shoes"></canvas>
+                        </div>
+                        <div class="clothing-option empty"></div>
+                        <div class="clothing-option empty"></div>
+                    </div>
+                </div>
+
+                <div id="accessories-section" class="customization-section" style="display: none;">
+                    <div class="part-controls">
+                        <div class="part-row">
+                            <span class="part-label">Coming soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const FRAME_WIDTH = 64;
+        const FRAME_HEIGHT = 64;
+        const FRONT_FRAME = { col: 0, row: 2 };
+        
+        // LPC Animation and Direction definitions
+        // LPC spritesheet structure: Each row is a direction, each column is an animation frame
+        // Standard LPC format: 4 frames per animation, 8 directions
+        // LPC Animation definitions
+        const ANIMATIONS = {
+            idle: { frames: [0, 1, 2, 3], speed: 500 }      // Idle animation (columns 0-3)
+        };
+        
+        // LPC Direction rows (perspectives) - based on actual spritesheet layout
+        // Row 0: North/backwards (facing away)
+        // Row 1: Southwest
+        // Row 2: South (facing forward/toward camera)
+        // Row 3: Southeast
+        // Row 4: Northeast
+        const DIRECTIONS = {
+            north: 0,       // Row 0: North/backwards (facing away)
+            southwest: 1,   // Row 1: Southwest
+            south: 2,       // Row 2: South (facing forward/toward camera)
+            southeast: 3,   // Row 3: Southeast
+            northeast: 4    // Row 4: Northeast
+        };
+
+        lucide.createIcons();
+
+        function selectTab(el, category) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            
+            // Zoom camera for hair tab
+            const charContainer = document.querySelector('.pixel-char-container');
+            if (category === 'hair') {
+                charContainer.classList.add('zoom-head');
+            } else {
+                charContainer.classList.remove('zoom-head');
+            }
+            
+            // Animate out current section
+            const currentSection = document.querySelector('.customization-section:not(.hidden):not(.hiding)');
+            if (currentSection) {
+                currentSection.classList.add('hiding');
+                setTimeout(() => {
+                    currentSection.classList.add('hidden');
+                    currentSection.classList.remove('hiding');
+                    currentSection.style.display = 'none';
+                    
+                    // Animate in new section
+                    const sectionId = `${category}-section`;
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        section.style.display = 'block';
+                        section.classList.remove('hidden');
+                        section.classList.add('showing');
+                        setTimeout(() => {
+                            section.classList.remove('showing');
+                        }, 10);
+                    }
+                }, 300);
+            } else {
+                // No current section, just show new one
+                const sectionId = `${category}-section`;
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.style.display = 'block';
+                    section.classList.remove('hidden');
+                    section.classList.add('showing');
+                    setTimeout(() => {
+                        section.classList.remove('showing');
+                    }, 10);
+                }
+            }
+        }
+
+        function selectSkinTone(clickedSwatch, tone) {
+            document.querySelectorAll('.swatch').forEach(swatch => swatch.classList.remove('selected'));
+            clickedSwatch.classList.add('selected');
+            if (window.avatarEditor) {
+                window.avatarEditor.config.skinTone = tone;
+                window.avatarEditor.render();
+                // Hair previews will update automatically via render()
+            }
+        }
+
+        function selectHair(clickedOption, hairType) {
+            document.querySelectorAll('.hair-option').forEach(option => option.classList.remove('selected'));
+            clickedOption.classList.add('selected');
+            if (window.avatarEditor) {
+                window.avatarEditor.config.hair = hairType;
+                window.avatarEditor.updateHairSelection();
+                window.avatarEditor.render();
+            }
+        }
+
+        function selectClothing(clickedOption, part, option) {
+            // Remove selected from all options in this part's grid
+            const grid = clickedOption.closest('.clothing-grid');
+            grid.querySelectorAll('.clothing-option').forEach(opt => opt.classList.remove('selected'));
+            clickedOption.classList.add('selected');
+            
+            if (window.avatarEditor) {
+                window.avatarEditor.config[part] = option;
+                window.avatarEditor.updatePartDisplay(part);
+                window.avatarEditor.updateClothingSelection(part);
+                window.avatarEditor.render();
+            }
+        }
+
+        function setGender(gender) {
+            if (window.avatarEditor) {
+                window.avatarEditor.config.gender = gender;
+                
+                // Toggle Buttons UI
+                document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`btn-${gender === 'male' ? 'boy' : 'girl'}`).classList.add('active');
+                
+                window.avatarEditor.render();
+                // Hair previews will update automatically via render()
+            }
+        }
+
+        function toggleDebugPanel() {
+            const panel = document.getElementById('debug-panel');
+            if (panel) {
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                updateDebugInfo();
+                if (panel.style.display === 'block') {
+                    makeDebugPanelDraggable();
+                }
+            }
+        }
+
+        function makeDebugPanelDraggable() {
+            const panel = document.getElementById('debug-panel');
+            if (!panel) return;
+            
+            const header = panel.querySelector('.debug-header');
+            if (!header) return;
+            
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+            
+            // Get initial position
+            const rect = panel.getBoundingClientRect();
+            xOffset = rect.left;
+            yOffset = rect.top;
+            
+            header.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+            
+            function dragStart(e) {
+                if (e.target.classList.contains('debug-close')) {
+                    return; // Don't drag when clicking close button
+                }
+                
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                
+                if (e.target === header || header.contains(e.target)) {
+                    isDragging = true;
+                    panel.classList.add('dragging');
+                }
+            }
+            
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    
+                    setTranslate(currentX, currentY, panel);
+                }
+            }
+            
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+                panel.classList.remove('dragging');
+            }
+            
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            }
+        }
+
+        function testAnimation(animType) {
+            if (window.avatarEditor) {
+                // Check if animation exists
+                if (!ANIMATIONS[animType]) {
+                    console.warn(`Animation "${animType}" does not exist. Available:`, Object.keys(ANIMATIONS));
+                    return;
+                }
+                window.avatarEditor.currentAnimation = animType;
+                window.avatarEditor.currentFrameIndex = 0;
+                window.avatarEditor.render(true);
+                updateDebugInfo();
+            }
+        }
+
+        function testDirection(directionKey) {
+            if (window.avatarEditor) {
+                const directionKeys = Object.keys(DIRECTIONS);
+                const directionValues = Object.values(DIRECTIONS);
+                const index = directionKeys.indexOf(directionKey);
+                if (index >= 0) {
+                    window.avatarEditor.currentDirection = directionValues[index];
+                    const container = document.querySelector('.pixel-char-container');
+                    if (container) {
+                        container.setAttribute('data-direction', directionKey);
+                    }
+                    window.avatarEditor.render(true);
+                    updateDebugInfo();
+                }
+            }
+        }
+
+        function testFrame(frameIndex) {
+            if (window.avatarEditor) {
+                const animConfig = ANIMATIONS[window.avatarEditor.currentAnimation];
+                if (animConfig && animConfig.frames) {
+                    const maxFrame = animConfig.frames.length - 1;
+                    window.avatarEditor.currentFrameIndex = Math.max(0, Math.min(frameIndex, maxFrame));
+                    window.avatarEditor.render(true);
+                    updateDebugInfo();
+                }
+            }
+        }
+
+        function nextFrame() {
+            if (window.avatarEditor) {
+                const animConfig = ANIMATIONS[window.avatarEditor.currentAnimation];
+                if (animConfig && animConfig.frames) {
+                    window.avatarEditor.currentFrameIndex = (window.avatarEditor.currentFrameIndex + 1) % animConfig.frames.length;
+                    window.avatarEditor.render(true);
+                    updateDebugInfo();
+                }
+            }
+        }
+
+        function prevFrame() {
+            if (window.avatarEditor) {
+                const animConfig = ANIMATIONS[window.avatarEditor.currentAnimation];
+                if (animConfig && animConfig.frames) {
+                    const maxFrame = animConfig.frames.length - 1;
+                    window.avatarEditor.currentFrameIndex = window.avatarEditor.currentFrameIndex <= 0 ? maxFrame : window.avatarEditor.currentFrameIndex - 1;
+                    window.avatarEditor.render(true);
+                    updateDebugInfo();
+                }
+            }
+        }
+
+        function stopAnimation() {
+            if (window.avatarEditor) {
+                // Animation is disabled - no action needed
+                updateDebugInfo();
+            }
+        }
+
+        function startAnimation() {
+            if (window.avatarEditor) {
+                // Animation is disabled - no action needed
+                updateDebugInfo();
+            }
+        }
+
+        function updateDebugInfo() {
+            if (window.avatarEditor) {
+                const info = document.getElementById('debug-info');
+                if (info) {
+                    const animConfig = ANIMATIONS[window.avatarEditor.currentAnimation];
+                    const frameValue = animConfig ? animConfig.frames[window.avatarEditor.currentFrameIndex] : '?';
+                    const directionKeys = Object.keys(DIRECTIONS);
+                    const directionValues = Object.values(DIRECTIONS);
+                    const dirIndex = directionValues.indexOf(window.avatarEditor.currentDirection);
+                    const directionKey = dirIndex >= 0 ? directionKeys[dirIndex] : '?';
+                    
+                    document.getElementById('debug-current').textContent = 
+                        `${window.avatarEditor.currentAnimation} | ${directionKey} | Frame ${window.avatarEditor.currentFrameIndex} (col: ${frameValue})`;
+                }
+            }
+        }
+
+        function randomize() {
+            // Spin the icon
+            const iconWrap = document.querySelector('.icon-wrap');
+            if (iconWrap) {
+                iconWrap.style.transform = 'rotate(180deg)';
+                setTimeout(() => {
+                    iconWrap.style.transform = 'rotate(0deg)';
+                }, 500);
+            }
+            
+            if (window.avatarEditor) {
+                window.avatarEditor.randomize();
+            }
+        }
+
+        class PixelAvatarEditor {
+            constructor() {
+                this.canvas = document.getElementById('avatar-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.ctx.imageSmoothingEnabled = false;
+                
+                this.config = {
+                    gender: 'male',
+                    skinTone: 'light',
+                    hair: 'bangs',
+                    torso: 'teal_shirt',
+                    legs: 'teal_pants',
+                    feet: 'black_shoes'
+                };
+                
+                this.options = {
+                    hair: ['bangs', 'long', 'ponytail'],
+                    torso: ['teal_shirt', 'white_shirt', 'maroon_shirt'],
+                    legs: ['teal_pants', 'white_pants', 'red_pants'],
+                    feet: ['black_shoes', 'brown_shoes']
+                };
+                
+                this.assetManifest = {
+                    body: {
+                        male_pale: '../../assets/lpc/body/male_pale.png',
+                        male_light: '../../assets/lpc/body/male_light.png',
+                        male_medium_light: '../../assets/lpc/body/male_medium_light.png',
+                        male_tanned: '../../assets/lpc/body/male_tanned.png',
+                        male_dark: '../../assets/lpc/body/male_dark.png',
+                        male_very_dark: '../../assets/lpc/body/male_very_dark.png',
+                        female_pale: '../../assets/lpc/body/female_pale.png',
+                        female_light: '../../assets/lpc/body/female_light.png',
+                        female_medium_light: '../../assets/lpc/body/female_medium_light.png',
+                        female_tanned: '../../assets/lpc/body/female_tanned.png',
+                        female_dark: '../../assets/lpc/body/female_dark.png',
+                        female_very_dark: '../../assets/lpc/body/female_very_dark.png'
+                    },
+                    hair: {
+                        bangs: '../../assets/lpc/hair/bangs.png',
+                        long: '../../assets/lpc/hair/long.png',
+                        ponytail: '../../assets/lpc/hair/ponytail.png'
+                    },
+                    torso: {
+                        male: {
+                            teal_shirt: '../../assets/lpc/torso/male_teal_shirt.png',
+                            white_shirt: '../../assets/lpc/torso/male_white_shirt.png',
+                            maroon_shirt: '../../assets/lpc/torso/male_maroon_shirt.png'
+                        },
+                        female: {
+                            teal_shirt: '../../assets/lpc/torso/female_teal_shirt.png',
+                            white_shirt: '../../assets/lpc/torso/female_white_shirt.png',
+                            maroon_shirt: '../../assets/lpc/torso/female_maroon_shirt.png'
+                        }
+                    },
+                    legs: {
+                        male: {
+                            teal_pants: '../../assets/lpc/legs/male_teal_pants.png',
+                            white_pants: '../../assets/lpc/legs/male_white_pants.png',
+                            red_pants: '../../assets/lpc/legs/male_red_pants.png'
+                        },
+                        female: {
+                            teal_pants: '../../assets/lpc/legs/female_teal_pants.png',
+                            white_pants: '../../assets/lpc/legs/female_white_pants.png',
+                            red_pants: '../../assets/lpc/legs/female_red_pants.png'
+                        }
+                    },
+                    feet: {
+                        male: {
+                            black_shoes: '../../assets/lpc/feet/male_black_shoes.png',
+                            brown_shoes: '../../assets/lpc/feet/male_brown_shoes.png'
+                        },
+                        female: {
+                            black_shoes: '../../assets/lpc/feet/female_black_shoes.png',
+                            brown_shoes: '../../assets/lpc/feet/female_brown_shoes.png'
+                        }
+                    }
+                };
+                
+                this.imageCache = new Map();
+                this.renderOrder = ['body', 'legs', 'feet', 'torso', 'hair'];
+                
+                // Animation state - static frame only
+                this.currentAnimation = 'idle';
+                this.currentDirection = DIRECTIONS.south; // Start facing forward (row 2 - third row, facing camera)
+                this.currentFrameIndex = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.updateHairSelection();
+                this.updateClothingSelections();
+                this.render();
+                this.renderHairPreviews();
+                this.renderClothingPreviews();
+            }
+            
+            async renderHairPreviews() {
+                const hairOptions = document.querySelectorAll('.hair-option:not(.empty)');
+                for (const option of hairOptions) {
+                    const hairType = option.dataset.hair;
+                    const previewCanvas = option.querySelector('.hair-preview-canvas');
+                    if (previewCanvas && hairType) {
+                        // Wait a bit for layout to settle
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                        await this.renderHairPreview(previewCanvas, hairType);
+                    }
+                }
+            }
+            
+            async renderHairPreview(canvas, hairType) {
+                // Wait for layout to be ready
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                
+                // Get the actual display size from the parent container
+                const container = canvas.parentElement;
+                const rect = container.getBoundingClientRect();
+                const displayWidth = Math.floor(rect.width) || 100;
+                const displayHeight = Math.floor(rect.height) || 100;
+                
+                // Set canvas internal resolution to match display size (for crisp pixels)
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = displayWidth * dpr;
+                canvas.height = displayHeight * dpr;
+                ctx.scale(dpr, dpr);
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, displayWidth, displayHeight);
+                
+                try {
+                    // Draw body (head/face area) - only top 40 pixels of source, scaled to fill
+                    const bodyKey = `${this.config.gender}_${this.config.skinTone}`;
+                    const bodyImg = await this.getLayerImage('body', bodyKey);
+                    if (bodyImg) {
+                        const sx = FRONT_FRAME.col * FRAME_WIDTH;
+                        const sy = FRONT_FRAME.row * FRAME_HEIGHT;
+                        // Scale to fill width, maintain aspect ratio, center vertically
+                        const scale = displayWidth / FRAME_WIDTH;
+                        const headHeight = 40 * scale;
+                        const yOffset = Math.max(0, (displayHeight - headHeight) / 2);
+                        ctx.drawImage(bodyImg, sx, sy, FRAME_WIDTH, 40, 0, yOffset, displayWidth, headHeight);
+                    }
+                    
+                    // Draw hair
+                    if (hairType) {
+                        const hairImg = await this.getLayerImage('hair', hairType);
+                        if (hairImg) {
+                            const sx = FRONT_FRAME.col * FRAME_WIDTH;
+                            const sy = FRONT_FRAME.row * FRAME_HEIGHT;
+                            // Scale to fill width, maintain aspect ratio, center vertically
+                            const scale = displayWidth / FRAME_WIDTH;
+                            const headHeight = 40 * scale;
+                            const yOffset = Math.max(0, (displayHeight - headHeight) / 2);
+                            ctx.drawImage(hairImg, sx, sy, FRAME_WIDTH, 40, 0, yOffset, displayWidth, headHeight);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error rendering hair preview:', error);
+                }
+            }
+
+            updateHairSelection() {
+                document.querySelectorAll('.hair-option').forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.hair === this.config.hair) {
+                        option.classList.add('selected');
+                    }
+                });
+            }
+            
+            updateClothingSelections() {
+                // Update torso selection
+                document.querySelectorAll('[data-clothing="torso"]').forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.option === this.config.torso) {
+                        option.classList.add('selected');
+                    }
+                });
+                // Update legs selection
+                document.querySelectorAll('[data-clothing="legs"]').forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.option === this.config.legs) {
+                        option.classList.add('selected');
+                    }
+                });
+                // Update feet selection
+                document.querySelectorAll('[data-clothing="feet"]').forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.option === this.config.feet) {
+                        option.classList.add('selected');
+                    }
+                });
+            }
+            
+            updateClothingSelection(part) {
+                document.querySelectorAll(`[data-clothing="${part}"]`).forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.option === this.config[part]) {
+                        option.classList.add('selected');
+                    }
+                });
+            }
+            
+            setupEventListeners() {
+                document.querySelectorAll('.arrow-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const part = e.target.dataset.part;
+                        const direction = parseInt(e.target.dataset.direction);
+                        this.cyclePart(part, direction);
+                    });
+                });
+            }
+            
+            cyclePart(part, direction) {
+                const options = this.options[part];
+                const currentIndex = options.indexOf(this.config[part]);
+                let newIndex = currentIndex + direction;
+                
+                if (newIndex < 0) newIndex = options.length - 1;
+                if (newIndex >= options.length) newIndex = 0;
+                
+                this.config[part] = options[newIndex];
+                this.updatePartDisplay(part);
+                if (['torso', 'legs', 'feet'].includes(part)) {
+                    this.updateClothingSelection(part);
+                }
+                this.render();
+            }
+            
+            updatePartDisplay(part) {
+                const valueEl = document.getElementById(`${part}-value`);
+                if (!valueEl) return;
+                
+                const optionNames = {
+                    hair: {
+                        bangs: 'Short',
+                        long: 'Long',
+                        ponytail: 'Ponytail'
+                    },
+                    torso: {
+                        teal_shirt: 'Teal Shirt',
+                        white_shirt: 'White Shirt',
+                        maroon_shirt: 'Red Shirt'
+                    },
+                    legs: {
+                        teal_pants: 'Teal Pants',
+                        white_pants: 'White Pants',
+                        red_pants: 'Red Pants'
+                    },
+                    feet: {
+                        black_shoes: 'Black Shoes',
+                        brown_shoes: 'Brown Shoes'
+                    }
+                };
+                
+                const optionName = optionNames[part]?.[this.config[part]] || this.config[part];
+                valueEl.textContent = optionName;
+            }
+            
+            randomize() {
+                // Randomize skin tone
+                const tones = ['pale', 'light', 'medium_light', 'tanned', 'dark', 'very_dark'];
+                this.config.skinTone = tones[Math.floor(Math.random() * tones.length)];
+                
+                // Update skin tone UI
+                document.querySelectorAll('.swatch').forEach(swatch => {
+                    swatch.classList.remove('selected');
+                });
+                const swatches = document.querySelectorAll('.swatch');
+                if (swatches.length > 0) {
+                    swatches[Math.floor(Math.random() * swatches.length)].classList.add('selected');
+                }
+                
+                // Randomize all parts
+                Object.keys(this.options).forEach(part => {
+                    const options = this.options[part];
+                    this.config[part] = options[Math.floor(Math.random() * options.length)];
+                    this.updatePartDisplay(part);
+                });
+                
+                // Update UI selections
+                this.updateHairSelection();
+                this.updateClothingSelections();
+                
+                // Keep direction static (front)
+                this.currentDirection = DIRECTIONS.south; // Facing forward (row 2)
+                this.currentFrameIndex = 0;
+                
+                this.render();
+            }
+            
+            async render(silent = false) {
+                // Clear canvas completely before rendering
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                const bodyKey = `${this.config.gender}_${this.config.skinTone}`;
+                await this.drawLayer('body', bodyKey);
+                
+                for (const part of this.renderOrder.filter(p => p !== 'body')) {
+                    const option = this.config[part];
+                    if (!option || option === 'none') continue;
+                    await this.drawLayer(part, option);
+                }
+                
+                // Update hair previews when main character renders (in case gender/skin changed)
+                if (!silent) {
+                    this.renderHairPreviews();
+                    this.renderClothingPreviews();
+                }
+            }
+            
+            drawIdleFrame(img) {
+                // Helper method to draw idle frame 0 as fallback
+                const idleConfig = ANIMATIONS['idle'];
+                if (idleConfig && idleConfig.frames && idleConfig.frames.length > 0) {
+                    const fallbackCol = idleConfig.frames[0];
+                    const fallbackSx = fallbackCol * FRAME_WIDTH;
+                    const fallbackSy = this.currentDirection * FRAME_HEIGHT;
+                    if (fallbackSx >= 0 && fallbackSy >= 0 && fallbackSx + FRAME_WIDTH <= img.width && fallbackSy + FRAME_HEIGHT <= img.height) {
+                        this.ctx.clearRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+                        this.ctx.drawImage(img, fallbackSx, fallbackSy, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+                    }
+                }
+            }
+            
+            async renderClothingPreviews() {
+                const clothingParts = ['torso', 'legs', 'feet'];
+                for (const part of clothingParts) {
+                    const options = document.querySelectorAll(`[data-clothing="${part}"]:not(.empty)`);
+                    for (const option of options) {
+                        const optionValue = option.dataset.option;
+                        const previewCanvas = option.querySelector('.clothing-preview-canvas');
+                        if (previewCanvas && optionValue) {
+                            await new Promise(resolve => requestAnimationFrame(resolve));
+                            await this.renderClothingPreview(previewCanvas, part, optionValue);
+                        }
+                    }
+                }
+            }
+            
+            async renderClothingPreview(canvas, part, optionValue) {
+                // Wait for layout to be ready
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                
+                // Get the actual display size from the parent container
+                const container = canvas.parentElement;
+                const rect = container.getBoundingClientRect();
+                const displayWidth = Math.floor(rect.width) || 100;
+                const displayHeight = Math.floor(rect.height) || 100;
+                
+                // Set canvas internal resolution to match display size (for crisp pixels)
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = displayWidth * dpr;
+                canvas.height = displayHeight * dpr;
+                ctx.scale(dpr, dpr);
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, displayWidth, displayHeight);
+                
+                try {
+                    // Draw body first (for context)
+                    const bodyKey = `${this.config.gender}_${this.config.skinTone}`;
+                    const bodyImg = await this.getLayerImage('body', bodyKey);
+                    if (bodyImg) {
+                        const sx = FRONT_FRAME.col * FRAME_WIDTH;
+                        const sy = FRONT_FRAME.row * FRAME_HEIGHT;
+                        const scale = displayWidth / FRAME_WIDTH;
+                        const scaledHeight = FRAME_HEIGHT * scale;
+                        const yOffset = Math.max(0, (displayHeight - scaledHeight) / 2);
+                        ctx.drawImage(bodyImg, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, 0, yOffset, displayWidth, scaledHeight);
+                    }
+                    
+                    // Draw the clothing item
+                    const clothingImg = await this.getLayerImage(part, optionValue);
+                    if (clothingImg) {
+                        const sx = FRONT_FRAME.col * FRAME_WIDTH;
+                        const sy = FRONT_FRAME.row * FRAME_HEIGHT;
+                        const scale = displayWidth / FRAME_WIDTH;
+                        const scaledHeight = FRAME_HEIGHT * scale;
+                        const yOffset = Math.max(0, (displayHeight - scaledHeight) / 2);
+                        ctx.drawImage(clothingImg, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, 0, yOffset, displayWidth, scaledHeight);
+                    }
+                } catch (error) {
+                    console.error(`Error rendering ${part} preview:`, error);
+                }
+            }
+            
+            async drawLayer(part, option) {
+                try {
+                    const img = await this.getLayerImage(part, option);
+                    if (img) {
+                        this.drawFrame(img);
+                    }
+                } catch (error) {
+                    console.error(`Error drawing ${part}:`, error);
+                }
+            }
+            
+            async getLayerImage(part, option) {
+                let path;
+                if (part === 'body') {
+                    path = this.assetManifest.body[option];
+                } else if (part === 'torso' || part === 'legs' || part === 'feet') {
+                    const genderMap = this.assetManifest[part]?.[this.config.gender];
+                    path = genderMap?.[option];
+                } else {
+                    path = this.assetManifest[part]?.[option];
+                }
+                if (!path) return null;
+                return this.loadImage(path);
+            }
+            
+            loadImage(path) {
+                if (this.imageCache.has(path)) {
+                    return Promise.resolve(this.imageCache.get(path));
+                }
+                
+                const promise = new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.imageCache.set(path, img);
+                        resolve(img);
+                    };
+                    img.onerror = () => {
+                        console.warn(`Failed to load: ${path}`);
+                        resolve(null);
+                    };
+                    img.src = path;
+                });
+                
+                return promise;
+            }
+            
+            drawFrame(img) {
+                // Use current animation and direction
+                const animConfig = ANIMATIONS[this.currentAnimation];
+                if (!animConfig || !animConfig.frames || animConfig.frames.length === 0) {
+                    // Fallback to idle frame 0 if animation config is invalid
+                    this.drawIdleFrame(img);
+                    return;
+                }
+                
+                // Ensure frame index is valid
+                const safeFrameIndex = Math.max(0, Math.min(this.currentFrameIndex, animConfig.frames.length - 1));
+                const currentCol = animConfig.frames[safeFrameIndex];
+                
+                // Validate frame value
+                if (currentCol === undefined || currentCol === null || currentCol < 0 || isNaN(currentCol)) {
+                    // Fallback to idle frame 0
+                    this.drawIdleFrame(img);
+                    return;
+                }
+                
+                const currentRow = this.currentDirection;
+                
+                // Validate coordinates before drawing
+                const sx = currentCol * FRAME_WIDTH;
+                const sy = currentRow * FRAME_HEIGHT;
+                
+                // Check if coordinates are within image bounds
+                if (sx < 0 || sy < 0 || sx + FRAME_WIDTH > img.width || sy + FRAME_HEIGHT > img.height) {
+                    // Log for debugging
+                    console.warn(`Frame out of bounds: col=${currentCol}, row=${currentRow}, img=${img.width}x${img.height}, sx=${sx}, sy=${sy}`);
+                    // Fallback to idle frame 0 if out of bounds
+                    this.drawIdleFrame(img);
+                    return;
+                }
+                
+                // Draw the frame (don't clear - layers are composited on top of each other)
+                this.ctx.drawImage(img, sx, sy, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+            }
+            
+            drawIdleFrame(img) {
+                // Helper method to draw idle frame 0 as fallback
+                const idleConfig = ANIMATIONS['idle'];
+                if (idleConfig && idleConfig.frames && idleConfig.frames.length > 0) {
+                    const fallbackCol = idleConfig.frames[0];
+                    const fallbackSx = fallbackCol * FRAME_WIDTH;
+                    const fallbackSy = this.currentDirection * FRAME_HEIGHT;
+                    if (fallbackSx >= 0 && fallbackSy >= 0 && fallbackSx + FRAME_WIDTH <= img.width && fallbackSy + FRAME_HEIGHT <= img.height) {
+                        // Draw the frame (don't clear - layers are composited)
+                        this.ctx.drawImage(img, fallbackSx, fallbackSy, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+                    }
+                }
+            }
+        }
+        
+        // Initialize editor when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const startTime = Date.now();
+            const MIN_LOADING_TIME = 2000;
+            
+            window.avatarEditor = new PixelAvatarEditor();
+            
+            function hideLoadingScreen() {
+                const elapsed = Date.now() - startTime;
+                const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsed);
+                
+                setTimeout(() => {
+                    const loadingScreen = document.getElementById('loading-screen');
+                    if (loadingScreen) {
+                        loadingScreen.classList.add('hidden');
+                        setTimeout(() => {
+                            loadingScreen.remove();
+                        }, 500);
+                    }
+                }, remainingTime);
+            }
+            
+            if (document.readyState === 'complete') {
+                hideLoadingScreen();
+            } else {
+                window.addEventListener('load', hideLoadingScreen);
+            }
+        });
+    </script>
+</body>
+</html>
